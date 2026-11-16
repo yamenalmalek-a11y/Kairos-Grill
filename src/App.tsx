@@ -8,7 +8,6 @@ import {
   Minus,
   Search,
   MessageCircle,
-  CreditCard,
   X,
   ArrowDown,
   Utensils,
@@ -25,11 +24,8 @@ import {
 } from '@/src/data/kairosData';
 import { CroppedPhoto } from '@/src/components/CroppedPhoto';
 import { CartDrawer, CartEntry } from '@/src/components/CartDrawer';
-import { PaymentLinkModal } from '@/src/components/PaymentLinkModal';
 import { PWAInstallButton } from '@/src/components/PWAInstallButton';
 import { OfflineIndicator } from '@/src/components/OfflineIndicator';
-
-const STORAGE_PAYMENT_KEY = 'kairos_payment_link_v1';
 
 export default function App() {
   const [lang, setLang] = useState<'ar' | 'de'>('ar');
@@ -37,28 +33,11 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<CartEntry[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [paymentLink, setPaymentLink] = useState<string>(() => {
-    try {
-      return localStorage.getItem(STORAGE_PAYMENT_KEY) || KAIROS_INFO.defaultPaymentLink;
-    } catch {
-      return KAIROS_INFO.defaultPaymentLink;
-    }
-  });
 
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }, [lang]);
-
-  const handleSavePaymentLink = (url: string) => {
-    setPaymentLink(url);
-    try {
-      localStorage.setItem(STORAGE_PAYMENT_KEY, url);
-    } catch {
-      // Ignore storage quota errors
-    }
-  };
 
   const handleAddToCart = (dish: KairosDish) => {
     setCart((prev) => {
@@ -620,23 +599,6 @@ export default function App() {
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <PWAInstallButton lang={lang} variant="primary" />
-
-                <button
-                  type="button"
-                  onClick={() => setIsPaymentModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-3 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] text-[13px] font-bold transition-colors"
-                >
-                  <CreditCard className="w-4 h-4 text-[#FF8000]" />
-                  <span>
-                    {paymentLink
-                      ? lang === 'ar'
-                        ? 'رابط الدفع مُفعّل (تعديل)'
-                        : 'Zahlungslink aktiv (Ändern)'
-                      : lang === 'ar'
-                        ? 'إضافة رابط الدفع الإلكتروني'
-                        : 'Zahlungslink hinterlegen'}
-                  </span>
-                </button>
               </div>
             </div>
           </div>
@@ -681,16 +643,6 @@ export default function App() {
         cart={cart}
         onUpdateQty={handleUpdateQty}
         onClearCart={() => setCart([])}
-        lang={lang}
-        paymentLink={paymentLink}
-        onOpenPaymentConfig={() => setIsPaymentModalOpen(true)}
-      />
-
-      <PaymentLinkModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        currentLink={paymentLink}
-        onSaveLink={handleSavePaymentLink}
         lang={lang}
       />
 

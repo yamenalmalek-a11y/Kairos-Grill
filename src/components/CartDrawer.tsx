@@ -34,8 +34,6 @@ interface CartDrawerProps {
   onUpdateQty: (dishId: string, delta: number) => void;
   onClearCart: () => void;
   lang: 'ar' | 'de';
-  paymentLink: string;
-  onOpenPaymentConfig: () => void;
 }
 
 export function CartDrawer({
@@ -45,9 +43,8 @@ export function CartDrawer({
   onUpdateQty,
   onClearCart,
   lang,
-  paymentLink,
-  onOpenPaymentConfig,
 }: CartDrawerProps) {
+  const paymentLink = KAIROS_INFO.defaultPaymentLink;
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [orderMode, setOrderMode] = useState<'delivery' | 'pickup'>('delivery');
@@ -477,24 +474,9 @@ export function CartDrawer({
 
                 {/* Payment Method */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[12px] font-semibold text-[#242E30]">
-                      {lang === 'ar' ? 'طريقة الدفع' : 'Zahlungsart'}
-                    </label>
-                    <button
-                      type="button"
-                      onClick={onOpenPaymentConfig}
-                      className="text-[11px] font-semibold text-[#FF8000] hover:underline"
-                    >
-                      {paymentLink
-                        ? lang === 'ar'
-                          ? 'تعديل رابط الدفع'
-                          : 'Zahlungslink ändern'
-                        : lang === 'ar'
-                          ? '+ إضافة رابط دفع'
-                          : '+ Zahlungslink hinterlegen'}
-                    </button>
-                  </div>
+                  <label className="block text-[12px] font-semibold text-[#242E30] mb-1.5">
+                    {lang === 'ar' ? 'طريقة الدفع' : 'Zahlungsart'}
+                  </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
