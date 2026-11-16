@@ -102,18 +102,14 @@ export default function App() {
           {/* Zone 1: Brand */}
           <a
             href="#top"
-            className="flex items-center gap-2.5 whitespace-nowrap shrink-0"
+            className="flex items-center whitespace-nowrap shrink-0"
+            aria-label="Kairos Grill"
           >
-            <CroppedPhoto
+            <img
               src={KAIROS_ASSETS.logoBanner}
-              alt="Kairos Grill Logo"
-              cropPosition="50% 36%"
-              cropScale={1.7}
-              className="w-9 h-9 rounded-[10px] shrink-0"
+              alt="Kairos Grill"
+              className="h-11 w-auto object-contain"
             />
-            <span className="font-display text-[19px] font-extrabold tracking-tight text-[#242E30]">
-              Kairos <span className="text-[#FF8000]">Grill</span>
-            </span>
           </a>
 
           {/* Zone 2: Clean Single-Line Nav Links */}
@@ -265,13 +261,11 @@ export default function App() {
 
               {/* Hero Visual Showcase using Real Uploaded Photos */}
               <div className="lg:col-span-6 grid grid-cols-2 gap-3.5">
-                <div className="col-span-2 h-[210px] sm:h-[235px] rounded-[12px] overflow-hidden shadow-[0_8px_24px_rgba(36,46,48,0.08)]">
-                  <CroppedPhoto
+                <div className="col-span-2 h-[200px] sm:h-[225px] rounded-[12px] overflow-hidden bg-white border border-[#EAE5DF] p-5 flex items-center justify-center shadow-[0_8px_24px_rgba(36,46,48,0.06)]">
+                  <img
                     src={KAIROS_ASSETS.logoBanner}
-                    alt="Kairos Grill Brand Banner"
-                    cropPosition="50% 36%"
-                    cropScale={1.5}
-                    className="w-full h-full"
+                    alt="Kairos Grill Logo"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
                 <div className="h-[155px] sm:h-[175px] rounded-[12px] overflow-hidden shadow-[0_6px_18px_rgba(36,46,48,0.08)]">

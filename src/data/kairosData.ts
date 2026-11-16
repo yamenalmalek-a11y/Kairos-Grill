@@ -35,7 +35,7 @@ export const KAIROS_INFO = {
 };
 
 export const KAIROS_ASSETS = {
-  logoBanner: '/assets/aistudio/Screenshot_________-_______17d68f8c.png',
+  logoBanner: '/kairos-logo.png',
   contactCard: '/assets/aistudio/Screenshot_________-_______bc0a979d.png',
   collageGrill: '/assets/aistudio/Screenshot_________-_______38f90f4a.png',
   cateringHero: '/assets/aistudio/Screenshot_________-_______28c6755e.png',

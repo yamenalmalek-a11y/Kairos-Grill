@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Share, PlusSquare, Smartphone, X, Check } from 'lucide-react';
+import { Download, Share, PlusSquare, X, Check } from 'lucide-react';
 import { usePWAInstall } from '@/src/hooks/usePWAInstall';
 
 interface PWAInstallButtonProps {
@@ -55,10 +55,12 @@ export function PWAInstallButton({ lang, variant = 'primary' }: PWAInstallButton
         >
           <div className="w-full max-w-md bg-white rounded-[16px] p-6 shadow-2xl border border-[#EAE5DF]">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-[12px] bg-[#FFF3E6] text-[#FF8000] flex items-center justify-center shrink-0">
-                  <Smartphone className="w-5 h-5" />
-                </div>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/pwa-192x192.png"
+                  alt="Kairos Grill App Icon"
+                  className="w-11 h-11 rounded-[12px] border border-[#EAE5DF] bg-white object-contain shrink-0"
+                />
                 <div>
                   <h3 id="pwa-install-title" className="font-display text-[17px] font-bold text-[#242E30]">
                     {lang === 'ar' ? 'تثبيت تطبيق Kairos Grill' : 'Kairos Grill App installieren'}
