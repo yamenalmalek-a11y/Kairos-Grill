@@ -11,6 +11,7 @@ import {
   X,
   ArrowDown,
   Utensils,
+  ExternalLink,
 } from 'lucide-react';
 import {
   CartEntry,
@@ -29,6 +30,7 @@ import { CroppedPhoto } from '@/src/components/CroppedPhoto';
 import { CartDrawer } from '@/src/components/CartDrawer';
 import { PWAInstallButton } from '@/src/components/PWAInstallButton';
 import { OfflineIndicator } from '@/src/components/OfflineIndicator';
+import { VideoShowcase } from '@/src/components/VideoShowcase';
 
 function makeCartKey(dishId: string, variant?: DishVariant): string {
   return variant ? `${dishId}__${variant.id}` : dishId;
@@ -424,6 +426,15 @@ export default function App() {
           </div>
         </section>
 
+        {/* Video Showcase Section */}
+        <VideoShowcase
+          lang={lang}
+          onJumpToCategory={(category) => {
+            setActiveCategory(category);
+            setSearchQuery('');
+          }}
+        />
+
         {/* Section 2: Interactive Menu & Complete Official Speisekarte */}
         <section id="menu" className="max-w-[1280px] mx-auto px-4 sm:px-6 py-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
@@ -510,7 +521,7 @@ export default function App() {
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-display text-[19px] font-extrabold text-[#242E30]">
                         {lang === 'ar'
-                          ? 'مختارات بالصور · المشروبات، التورتات والمشاوي'
+                          ? 'أبرز الأطباق، المشروبات والتورتات بالصور'
                           : 'Spezialitäten, Torten & Getränke'}
                       </h3>
                     </div>
@@ -596,8 +607,17 @@ export default function App() {
                             key={dish.id}
                             className="bg-white rounded-[12px] p-4 border border-[#EAE5DF]/85 shadow-[0_2px_10px_rgba(36,46,48,0.04)] hover:shadow-[0_8px_22px_rgba(36,46,48,0.08)] transition-shadow flex flex-col justify-between gap-3"
                           >
-                            <div>
-                              <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-3.5">
+                              {dish.image && (
+                                <CroppedPhoto
+                                  src={dish.image}
+                                  alt={lang === 'ar' ? dish.nameAr : dish.nameDe}
+                                  cropPosition={dish.cropPosition}
+                                  cropScale={dish.cropScale}
+                                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-[10px] shrink-0"
+                                />
+                              )}
+                              <div className="min-w-0 flex-1">
                                 <h4 className="font-display text-[15px] font-bold text-[#242E30] leading-snug">
                                   {dish.itemNumber && (
                                     <span className="text-[#FF8000] tabular-nums me-1.5">
@@ -606,18 +626,18 @@ export default function App() {
                                   )}
                                   {lang === 'ar' ? dish.nameAr : dish.nameDe}
                                 </h4>
-                              </div>
-                              <p className="text-[12px] font-medium text-[#5A6568] mt-0.5">
-                                {lang === 'ar' ? dish.nameDe : dish.nameAr}
-                              </p>
-                              <p className="mt-1.5 text-[13px] text-[#5A6568] leading-relaxed">
-                                {lang === 'ar' ? dish.descAr : dish.descDe}
-                              </p>
-                              {dish.allergens && (
-                                <p className="mt-1 text-[11px] text-[#5A6568]/80">
-                                  Allergene: {dish.allergens}
+                                <p className="text-[12px] font-medium text-[#5A6568] mt-0.5">
+                                  {lang === 'ar' ? dish.nameDe : dish.nameAr}
                                 </p>
-                              )}
+                                <p className="mt-1.5 text-[13px] text-[#5A6568] leading-relaxed">
+                                  {lang === 'ar' ? dish.descAr : dish.descDe}
+                                </p>
+                                {dish.allergens && (
+                                  <p className="mt-1 text-[11px] text-[#5A6568]/80">
+                                    Allergene: {dish.allergens}
+                                  </p>
+                                )}
+                              </div>
                             </div>
 
                             <MenuCardAction
@@ -777,6 +797,26 @@ export default function App() {
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <PWAInstallButton lang={lang} variant="primary" />
+                <a
+                  href={KAIROS_INFO.facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-[#F0F6FF] hover:bg-[#E1EEFF] text-[#1877F2] border border-[#1877F2]/20 font-display font-bold text-[13px] transition-colors whitespace-nowrap shrink-0"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="w-4 h-4 fill-current shrink-0"
+                  >
+                    <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.99 3.66 9.13 8.44 9.88v-6.99H7.9v-2.89h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.89h-2.34v6.99C18.34 21.13 22 16.99 22 12z" />
+                  </svg>
+                  <span>
+                    {lang === 'ar'
+                      ? 'العروض الدائمة على فيسبوك'
+                      : 'Angebote auf Facebook'}
+                  </span>
+                  <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                </a>
               </div>
             </div>
           </div>
@@ -789,9 +829,23 @@ export default function App() {
           <p>
             © {new Date().getFullYear()} Kairos Grill · {KAIROS_INFO.address}
           </p>
-          <p className="tabular-nums">
-            Telefon & WhatsApp: {KAIROS_INFO.phoneDisplay}
-          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <a
+              href={KAIROS_INFO.facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#1877F2] hover:underline"
+            >
+              <span>
+                {lang === 'ar' ? 'فيسبوك (العروض الدائمة)' : 'Facebook · Dauerangebote'}
+              </span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <span aria-hidden="true">·</span>
+            <p className="tabular-nums">
+              Telefon & WhatsApp: {KAIROS_INFO.phoneDisplay}
+            </p>
+          </div>
         </div>
       </footer>
 

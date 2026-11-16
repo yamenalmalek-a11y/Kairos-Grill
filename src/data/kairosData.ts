@@ -2,6 +2,12 @@ import drinkAyranImg from '@/src/assets/images/drink_ayran_1794847040470.jpg';
 import drinkColaImg from '@/src/assets/images/drink_cola_1794847039459.jpg';
 import drinkUludagImg from '@/src/assets/images/drink_uludag_1794847040364.jpg';
 import drinkWaterImg from '@/src/assets/images/drink_water_1794847041478.jpg';
+import dishMutabbalImg from '@/src/assets/images/dish_mutabbal_1794852682101.jpg';
+import dishMahshiImg from '@/src/assets/images/dish_mahshi_yalanji_1794852682379.jpg';
+import dishSchawarmaImg from '@/src/assets/images/dish_schawarma_falafel_1794852683273.jpg';
+import dishBurgerImg from '@/src/assets/images/dish_handmade_burger_1794852683705.jpg';
+import dishPastaImg from '@/src/assets/images/dish_pasta_plate_1794852684113.jpg';
+import dishSchnitzelImg from '@/src/assets/images/dish_schnitzel_pommes_1794852684123.jpg';
 
 export type MenuCategoryId =
   | 'all'
@@ -69,6 +75,7 @@ export const KAIROS_INFO = {
   freeDeliveryThreshold: 25.0,
   minOrder: 10.0,
   defaultPaymentLink: '',
+  facebookUrl: 'https://ar-ar.facebook.com/profile.php?id=61581363021205',
 };
 
 export const KAIROS_ASSETS = {
@@ -77,6 +84,8 @@ export const KAIROS_ASSETS = {
   collageGrill: '/assets/aistudio/Screenshot_________-_______38f90f4a.png',
   cateringHero: '/assets/aistudio/Screenshot_________-_______28c6755e.png',
   buffetInterior: '/assets/aistudio/Screenshot_________-_______3377619f.png',
+  promoVideo:
+    '/assets/aistudio/______________-_2.6K_views___29_reactions______________________________________________________________________________65f2d9c3.mp4',
 };
 
 export const MENU_CATEGORIES: Array<{
@@ -134,7 +143,7 @@ export const KAIROS_MENU: KairosDish[] = [
     itemNumber: '01',
     category: 'mezze',
     nameDe: 'Mutabbal',
-    nameAr: 'متبّل باذنجان',
+    nameAr: 'متبّل باذنجان مشوي',
     descDe: 'Auberginenpüree mit Sesamsauce, Joghurt, Zitrone, Knoblauch & Fladenbrot.',
     descAr: 'مهروس الباذنجان المشوي بالطحينة واللبن والليمون والثوم مع خبز عربي.',
     allergens: 'A, G, K',
@@ -142,8 +151,12 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: 'Portion',
     unitAr: 'صحن',
-    image: '',
+    image: dishMutabbalImg,
     cropPosition: '50% 50%',
+    cropScale: 1,
+    highlightDe: 'Vorspeise · 7% MwSt.',
+    highlightAr: 'مقبّلات · ضريبة ٧٪',
+    featuredPhotoCard: true,
   },
   {
     id: 'hummus',
@@ -158,9 +171,8 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: 'Portion',
     unitAr: 'صحن',
-    image: '/assets/aistudio/Screenshot_________-_______80ac7036.png',
-    cropPosition: '50% 44%',
-    cropScale: 1.5,
+    image: '',
+    cropPosition: '50% 50%',
   },
   {
     id: 'yalanji',
@@ -175,8 +187,12 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: '6 Stück',
     unitAr: '٦ قطع',
-    image: '',
-    cropPosition: '50% 50%',
+    image: dishMahshiImg,
+    cropPosition: '30% 60%',
+    cropScale: 1.25,
+    highlightDe: 'Hausgemacht · 7% MwSt.',
+    highlightAr: 'محشي منزلي · ضريبة ٧٪',
+    featuredPhotoCard: true,
   },
   {
     id: 'mahshi-kousa',
@@ -225,9 +241,8 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: '1 Stück',
     unitAr: '١ قطعة',
-    image: '/assets/aistudio/Screenshot_________-_______28c6755e.png',
-    cropPosition: '30% 62%',
-    cropScale: 1.8,
+    image: '',
+    cropPosition: '50% 50%',
   },
   {
     id: 'kibbeh-labbaniye',
@@ -278,9 +293,8 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: 'Stück',
     unitAr: 'قطعة',
-    image: '/assets/aistudio/Screenshot_________-_______d6897e7a.png',
-    cropPosition: '50% 52%',
-    cropScale: 1.5,
+    image: '',
+    cropPosition: '50% 50%',
   },
   {
     id: 'thymian-saj',
@@ -499,8 +513,12 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: 'Stück',
     unitAr: 'سندويش',
-    image: '',
-    cropPosition: '50% 50%',
+    image: dishSchawarmaImg,
+    cropPosition: '50% 55%',
+    cropScale: 1,
+    highlightDe: 'Beliebt · 7% MwSt.',
+    highlightAr: 'مطلوب بكثرة · ضريبة ٧٪',
+    featuredPhotoCard: true,
   },
   {
     id: 'koefte-sandwich',
@@ -1073,8 +1091,12 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: 'Burger',
     unitAr: 'برغر',
-    image: '',
+    image: dishBurgerImg,
     cropPosition: '50% 50%',
+    cropScale: 1,
+    highlightDe: 'Handmade · 7% MwSt.',
+    highlightAr: 'برغر منزلي · ضريبة ٧٪',
+    featuredPhotoCard: true,
   },
   {
     id: 'burger-bbq',
@@ -1356,8 +1378,12 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: 'Portion',
     unitAr: 'صحن',
-    image: '',
+    image: dishPastaImg,
     cropPosition: '50% 50%',
+    cropScale: 1,
+    highlightDe: 'Hausgemacht · 7% MwSt.',
+    highlightAr: 'صلصة منزلية · ضريبة ٧٪',
+    featuredPhotoCard: true,
   },
   {
     id: 'pasta-carbonara',
@@ -1552,8 +1578,12 @@ export const KAIROS_MENU: KairosDish[] = [
     taxRate: 0.07,
     unitDe: 'Teller',
     unitAr: 'وجبة',
-    image: '',
-    cropPosition: '50% 50%',
+    image: dishSchnitzelImg,
+    cropPosition: '50% 55%',
+    cropScale: 1,
+    highlightDe: 'Handmade · 7% MwSt.',
+    highlightAr: 'مقرمش · ضريبة ٧٪',
+    featuredPhotoCard: true,
   },
   {
     id: 'schnitzel-jaeger',
