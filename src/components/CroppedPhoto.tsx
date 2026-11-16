@@ -12,8 +12,8 @@ interface CroppedPhotoProps {
 export function CroppedPhoto({
   src,
   alt,
-  cropPosition = '50% 45%',
-  cropScale = 1.48,
+  cropPosition = '50% 50%',
+  cropScale = 1,
   className = '',
 }: CroppedPhotoProps) {
   const [hasError, setHasError] = useState(false);
@@ -38,11 +38,17 @@ export function CroppedPhoto({
         alt={alt}
         referrerPolicy="no-referrer"
         onError={() => setHasError(true)}
-        style={{
-          objectPosition: cropPosition,
-          transform: `scale(${cropScale})`,
-          transformOrigin: cropPosition,
-        }}
+        style={
+          cropScale !== 1
+            ? {
+                objectPosition: cropPosition,
+                transform: `scale(${cropScale})`,
+                transformOrigin: cropPosition,
+              }
+            : {
+                objectPosition: cropPosition,
+              }
+        }
         className="w-full h-full object-cover transition-transform duration-300"
       />
     </div>

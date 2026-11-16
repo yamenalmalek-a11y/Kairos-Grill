@@ -13,6 +13,8 @@ import {
   Utensils,
 } from 'lucide-react';
 import {
+  CartEntry,
+  DishVariant,
   KAIROS_ASSETS,
   KAIROS_INFO,
   KAIROS_MENU,
@@ -20,12 +22,111 @@ import {
   MENU_CATEGORIES,
   MenuCategoryId,
   buildWhatsAppUrl,
+  calculateCartTotals,
   formatEuro,
 } from '@/src/data/kairosData';
 import { CroppedPhoto } from '@/src/components/CroppedPhoto';
-import { CartDrawer, CartEntry } from '@/src/components/CartDrawer';
+import { CartDrawer } from '@/src/components/CartDrawer';
 import { PWAInstallButton } from '@/src/components/PWAInstallButton';
 import { OfflineIndicator } from '@/src/components/OfflineIndicator';
+
+function makeCartKey(dishId: string, variant?: DishVariant): string {
+  return variant ? `${dishId}__${variant.id}` : dishId;
+}
+
+interface MenuCardActionProps {
+  dish: KairosDish;
+  lang: 'ar' | 'de';
+  selectedVariant?: DishVariant;
+  onSelectVariant?: (variant: DishVariant) => void;
+  qty: number;
+  onAdd: (dish: KairosDish, variant?: DishVariant) => void;
+  onUpdateQty: (entryKey: string, delta: number) => void;
+}
+
+function MenuCardAction({
+  dish,
+  lang,
+  selectedVariant,
+  onSelectVariant,
+  qty,
+  onAdd,
+  onUpdateQty,
+}: MenuCardActionProps) {
+  const activePrice = selectedVariant ? selectedVariant.price : dish.price;
+  const entryKey = makeCartKey(dish.id, selectedVariant);
+
+  return (
+    <div className="space-y-2.5">
+      {dish.variants && dish.variants.length > 0 && onSelectVariant && (
+        <div className="flex flex-wrap gap-1.5">
+          {dish.variants.map((variant) => {
+            const isSelected = selectedVariant?.id === variant.id;
+            return (
+              <button
+                key={variant.id}
+                type="button"
+                onClick={() => onSelectVariant(variant)}
+                className={`px-2.5 py-1 rounded-[8px] text-[11px] font-bold transition-colors tabular-nums ${
+                  isSelected
+                    ? 'bg-[#242E30] text-white'
+                    : 'bg-[#F8F5F2] text-[#242E30] border border-[#EAE5DF] hover:bg-[#FFF3E6]'
+                }`}
+              >
+                {lang === 'ar' ? variant.labelAr : variant.labelDe} · {formatEuro(variant.price)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="pt-2.5 border-t border-[#EAE5DF] flex items-center justify-between gap-3">
+        <div>
+          <span className="font-display text-[17px] sm:text-[18px] font-extrabold text-[#242E30] tabular-nums">
+            {formatEuro(activePrice)}
+          </span>
+          <span className="text-[11px] text-[#5A6568] ms-1.5 tabular-nums">
+            / {selectedVariant ? (lang === 'ar' ? selectedVariant.labelAr : selectedVariant.labelDe) : lang === 'ar' ? dish.unitAr : dish.unitDe} ·{' '}
+            {dish.taxRate === 0.19 ? '19%' : '7%'}
+          </span>
+        </div>
+
+        {qty === 0 ? (
+          <button
+            type="button"
+            onClick={() => onAdd(dish, selectedVariant)}
+            className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[13px] font-bold flex items-center gap-1.5 transition-colors shrink-0"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.4} />
+            <span>{lang === 'ar' ? 'أضف' : 'Bestellen'}</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-1.5 bg-[#FFF3E6] rounded-[12px] p-1 border border-[#FF8000]/30">
+            <button
+              type="button"
+              onClick={() => onUpdateQty(entryKey, -1)}
+              aria-label="Decrease quantity"
+              className="w-8 h-8 rounded-[10px] bg-white text-[#242E30] hover:text-[#FF8000] flex items-center justify-center shadow-xs"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
+            <span className="w-6 text-center text-[13px] font-extrabold text-[#242E30] tabular-nums">
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={() => onUpdateQty(entryKey, 1)}
+              aria-label="Increase quantity"
+              className="w-8 h-8 rounded-[10px] bg-[#FF8000] text-white hover:bg-[#E67300] flex items-center justify-center"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [lang, setLang] = useState<'ar' | 'de'>('ar');
@@ -33,31 +134,46 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<CartEntry[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
 
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }, [lang]);
 
-  const handleAddToCart = (dish: KairosDish) => {
+  const getSelectedVariant = (dish: KairosDish): DishVariant | undefined => {
+    if (!dish.variants || dish.variants.length === 0) return undefined;
+    const chosenId = selectedVariants[dish.id];
+    return (
+      dish.variants.find((v) => v.id === chosenId) ??
+      dish.variants[dish.variants.length > 1 && dish.category === 'pizza' ? 1 : 0]
+    );
+  };
+
+  const handleSelectVariant = (dishId: string, variant: DishVariant) => {
+    setSelectedVariants((prev) => ({ ...prev, [dishId]: variant.id }));
+  };
+
+  const handleAddToCart = (dish: KairosDish, variant?: DishVariant) => {
+    const chosenVariant = variant ?? getSelectedVariant(dish);
+    const key = makeCartKey(dish.id, chosenVariant);
+
     setCart((prev) => {
-      const existing = prev.find((entry) => entry.dish.id === dish.id);
+      const existing = prev.find((entry) => entry.key === key);
       if (existing) {
         return prev.map((entry) =>
-          entry.dish.id === dish.id
-            ? { ...entry, quantity: entry.quantity + 1 }
-            : entry
+          entry.key === key ? { ...entry, quantity: entry.quantity + 1 } : entry
         );
       }
-      return [...prev, { dish, quantity: 1 }];
+      return [...prev, { key, dish, variant: chosenVariant, quantity: 1 }];
     });
   };
 
-  const handleUpdateQty = (dishId: string, delta: number) => {
+  const handleUpdateQty = (entryKey: string, delta: number) => {
     setCart((prev) =>
       prev
         .map((entry) =>
-          entry.dish.id === dishId
+          entry.key === entryKey
             ? { ...entry, quantity: entry.quantity + delta }
             : entry
         )
@@ -65,20 +181,21 @@ export default function App() {
     );
   };
 
-  const getQty = (dishId: string) =>
-    cart.find((entry) => entry.dish.id === dishId)?.quantity ?? 0;
+  const getQty = (dishId: string, variant?: DishVariant) => {
+    const key = makeCartKey(dishId, variant);
+    return cart.find((entry) => entry.key === key)?.quantity ?? 0;
+  };
 
   const cartCount = cart.reduce((sum, entry) => sum + entry.quantity, 0);
-  const cartSubtotal = cart.reduce(
-    (sum, entry) => sum + entry.dish.price * entry.quantity,
-    0
-  );
+  const cartTotals = calculateCartTotals(cart, 'delivery');
+  const cartItemsWithTax = cartTotals.subtotal + cartTotals.totalTax;
 
   const filteredMenu = KAIROS_MENU.filter((dish) => {
     if (activeCategory !== 'all' && dish.category !== activeCategory) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
+        (dish.itemNumber && dish.itemNumber.includes(q)) ||
         dish.nameDe.toLowerCase().includes(q) ||
         dish.nameAr.toLowerCase().includes(q) ||
         dish.descDe.toLowerCase().includes(q) ||
@@ -87,6 +204,15 @@ export default function App() {
     }
     return true;
   });
+
+  const photoCardDishes = filteredMenu.filter((dish) => dish.featuredPhotoCard && dish.image);
+
+  const groupedCategories = MENU_CATEGORIES.filter((c) => c.id !== 'all')
+    .map((cat) => {
+      const items = filteredMenu.filter((d) => d.category === cat.id);
+      return { cat, items };
+    })
+    .filter(({ items }) => items.length > 0);
 
   const directCateringWhatsAppUrl = buildWhatsAppUrl(
     lang === 'ar'
@@ -123,6 +249,13 @@ export default function App() {
             </a>
             <a
               href="#menu"
+              onClick={() => setActiveCategory('drinks')}
+              className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0"
+            >
+              {lang === 'ar' ? 'المشروبات' : 'Getränke'}
+            </a>
+            <a
+              href="#menu"
               onClick={() => setActiveCategory('torten')}
               className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0"
             >
@@ -138,7 +271,7 @@ export default function App() {
               href="#contact"
               className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0"
             >
-              {lang === 'ar' ? 'العنوان والتواصل' : 'Kontakt'}
+              {lang === 'ar' ? 'التواصل' : 'Kontakt'}
             </a>
           </nav>
 
@@ -155,7 +288,7 @@ export default function App() {
               </span>
               {cartCount > 0 && (
                 <span className="tabular-nums border-s border-white/30 ps-2">
-                  {formatEuro(cartSubtotal)}
+                  {formatEuro(cartItemsWithTax)}
                 </span>
               )}
             </button>
@@ -167,7 +300,7 @@ export default function App() {
         {/* Section 1: Storefront Hero */}
         <section className="bg-white border-b border-[#EAE5DF]">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
-            {/* Sub-header Utility Strip: Language Toggle & Authentic Restaurant Info */}
+            {/* Sub-header Utility Strip */}
             <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-[#EAE5DF]/80">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[#5A6568]">
                 <span className="inline-flex items-center gap-1.5 font-medium text-[#242E30]">
@@ -226,8 +359,8 @@ export default function App() {
 
                 <p className="mt-4 text-[15px] text-[#5A6568] leading-relaxed max-w-xl">
                   {lang === 'ar'
-                    ? 'شيش طاووق مشوي على الأصول، مناقيش وفطائر بالفرن الحجري، وتورتات وكب كيك مُحضّرة منزلياً يومياً. اختر طلبك ليصلنا فوراً برسالة واتساب متكاملة مع موقعك وطريقة الدفع.'
-                    : 'Zartes Shish Tawook, ofenfrische Manakish & Pide sowie täglich frisch gebackene Torten. Direkt hier bestellen – Ihre Bestellung geht sofort inkl. Adresse per WhatsApp bei uns ein.'}
+                    ? 'شيش طاووق مشوي على الأصول، مقبلات وكبة، مناقيش صاج، بيتزا بالفرن الحجري، برغر، باستا، شنيتزل وتورتات منزلية يومياً مع فاتورة تفصيلية مباشرة على واتساب.'
+                    : 'Zartes Shish Tawook, orientalische Mezze, Saj, Steinofen-Pizza, handmade Burger, Pasta, Schnitzel & hausgemachte Torten. Direkt bestellen – Ihre Rechnung geht sofort per WhatsApp ein.'}
                 </p>
 
                 {/* Hours Summary */}
@@ -291,28 +424,30 @@ export default function App() {
           </div>
         </section>
 
-        {/* Section 2: Interactive Menu & Ordering Catalog */}
+        {/* Section 2: Interactive Menu & Complete Official Speisekarte */}
         <section id="menu" className="max-w-[1280px] mx-auto px-4 sm:px-6 py-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
               <h2 className="font-display text-[24px] sm:text-[28px] font-extrabold text-[#242E30]">
-                {lang === 'ar' ? 'القائمة اليومية الطازجة' : 'Unsere Speisekarte'}
+                {lang === 'ar' ? 'قائمة الطعام الكاملة (01–82) والمشروبات' : 'Unsere komplette Speisekarte'}
               </h2>
               <p className="text-[14px] text-[#5A6568] mt-1">
                 {lang === 'ar'
-                  ? 'جميع الأسعار باليورو (€) وتشمل التحضير المنزلي الطازج'
-                  : 'Alle Preise in Euro (€) · Alle Gerichte sind 100% hausgemacht'}
+                  ? 'الأسعار باليورو (€) · يُضاف ٧٪ ضريبة للطعام و١٩٪ للمشروبات'
+                  : 'Alle Preise netto in Euro (€) zzgl. 7% MwSt. (Speisen) & 19% MwSt. (Getränke)'}
               </p>
             </div>
 
             {/* Search Input */}
-            <div className="relative w-full md:w-72">
+            <div className="relative w-full md:w-80">
               <Search className="w-4 h-4 text-[#5A6568] absolute top-3.5 left-3.5 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={lang === 'ar' ? 'ابحث عن وجبة أو تورتة...' : 'Gericht oder Torte suchen...'}
+                placeholder={
+                  lang === 'ar' ? 'ابحث برقم الصنف أو الاسم (مثال: 24، شيش، بيتزا)...' : 'Suche nach Nr. oder Gericht (z. B. 27, Shish)...'
+                }
                 aria-label="Search menu"
                 className="w-full h-11 pl-10 pr-9 rounded-[12px] bg-white border border-[#EAE5DF] focus:border-[#FF8000] focus:outline-none text-[13px] shadow-xs"
               />
@@ -350,7 +485,6 @@ export default function App() {
             })}
           </div>
 
-          {/* Menu Grid */}
           {filteredMenu.length === 0 ? (
             <div className="bg-white rounded-[12px] p-10 text-center border border-[#EAE5DF]">
               <p className="font-display text-[16px] font-bold text-[#242E30]">
@@ -368,89 +502,139 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredMenu.map((dish) => {
-                const qty = getQty(dish.id);
-                return (
-                  <article
-                    key={dish.id}
-                    className="bg-white rounded-[12px] overflow-hidden shadow-[0_2px_12px_rgba(36,46,48,0.06)] hover:shadow-[0_10px_28px_rgba(36,46,48,0.1)] transition-all duration-200 flex flex-col border border-[#EAE5DF]/70"
-                  >
-                    <div className="aspect-[4/3] w-full overflow-hidden">
-                      <CroppedPhoto
-                        src={dish.image}
-                        alt={lang === 'ar' ? dish.nameAr : dish.nameDe}
-                        cropPosition={dish.cropPosition}
-                        cropScale={dish.cropScale}
-                        className="w-full h-full"
-                      />
+            <div className="space-y-12">
+              {/* Photo Highlights Grid (Drinks with new photos, Torten, Grill & Bakery photos) */}
+              {photoCardDishes.length > 0 && (
+                <div>
+                  {activeCategory === 'all' && !searchQuery.trim() && (
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-display text-[19px] font-extrabold text-[#242E30]">
+                        {lang === 'ar'
+                          ? 'مختارات بالصور · المشروبات، التورتات والمشاوي'
+                          : 'Spezialitäten, Torten & Getränke'}
+                      </h3>
                     </div>
+                  )}
 
-                    <div className="p-4 flex-1 flex flex-col">
-                      {(dish.highlightAr || dish.highlightDe) && (
-                        <p className="text-[11px] font-bold text-[#FF8000] mb-1">
-                          {lang === 'ar' ? dish.highlightAr : dish.highlightDe}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {photoCardDishes.map((dish) => {
+                      const activeVariant = getSelectedVariant(dish);
+                      const qty = getQty(dish.id, activeVariant);
+                      return (
+                        <article
+                          key={`photo-${dish.id}`}
+                          className="bg-white rounded-[12px] overflow-hidden shadow-[0_2px_12px_rgba(36,46,48,0.06)] hover:shadow-[0_10px_28px_rgba(36,46,48,0.1)] transition-all duration-200 flex flex-col border border-[#EAE5DF]/70"
+                        >
+                          <div className="aspect-[4/3] w-full overflow-hidden">
+                            <CroppedPhoto
+                              src={dish.image}
+                              alt={lang === 'ar' ? dish.nameAr : dish.nameDe}
+                              cropPosition={dish.cropPosition}
+                              cropScale={dish.cropScale}
+                              className="w-full h-full"
+                            />
+                          </div>
+
+                          <div className="p-4 flex-1 flex flex-col">
+                            {(dish.highlightAr || dish.highlightDe) && (
+                              <p className="text-[11px] font-bold text-[#FF8000] mb-1">
+                                {lang === 'ar' ? dish.highlightAr : dish.highlightDe}
+                              </p>
+                            )}
+
+                            <h3 className="font-display text-[16px] font-bold text-[#242E30] leading-snug">
+                              {dish.itemNumber ? `${dish.itemNumber}. ` : ''}
+                              {lang === 'ar' ? dish.nameAr : dish.nameDe}
+                            </h3>
+                            <p className="text-[12px] text-[#5A6568] mt-0.5">
+                              {lang === 'ar' ? dish.nameDe : dish.unitDe}
+                            </p>
+
+                            <p className="mt-2 mb-3 text-[13px] text-[#5A6568] leading-relaxed flex-1">
+                              {lang === 'ar' ? dish.descAr : dish.descDe}
+                            </p>
+
+                            <MenuCardAction
+                              dish={dish}
+                              lang={lang}
+                              selectedVariant={activeVariant}
+                              onSelectVariant={(variant) => handleSelectVariant(dish.id, variant)}
+                              qty={qty}
+                              onAdd={handleAddToCart}
+                              onUpdateQty={handleUpdateQty}
+                            />
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Grouped Full Numbered Menu Catalog (items without duplicate photo-only category) */}
+              {groupedCategories
+                .filter(({ items }) => items.some((item) => !item.featuredPhotoCard))
+                .map(({ cat, items }) => (
+                  <div key={cat.id} className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 pb-2 border-b border-[#EAE5DF]">
+                      <h3 className="font-display text-[20px] font-extrabold text-[#242E30]">
+                        {lang === 'ar' ? cat.labelAr : cat.labelDe}
+                      </h3>
+                      {(cat.noteAr || cat.noteDe) && (
+                        <p className="text-[12px] font-semibold text-[#FF8000]">
+                          {lang === 'ar' ? cat.noteAr : cat.noteDe}
                         </p>
                       )}
-
-                      <h3 className="font-display text-[16px] font-bold text-[#242E30] leading-snug">
-                        {lang === 'ar' ? dish.nameAr : dish.nameDe}
-                      </h3>
-                      <p className="text-[12px] text-[#5A6568] mt-0.5">
-                        {lang === 'ar' ? dish.nameDe : dish.unitDe}
-                      </p>
-
-                      <p className="mt-2 text-[13px] text-[#5A6568] leading-relaxed flex-1">
-                        {lang === 'ar' ? dish.descAr : dish.descDe}
-                      </p>
-
-                      <div className="mt-4 pt-3 border-t border-[#EAE5DF] flex items-center justify-between gap-3">
-                        <div>
-                          <span className="font-display text-[18px] font-extrabold text-[#242E30] tabular-nums">
-                            {formatEuro(dish.price)}
-                          </span>
-                          <span className="text-[11px] text-[#5A6568] ms-1.5">
-                            / {lang === 'ar' ? dish.unitAr : dish.unitDe}
-                          </span>
-                        </div>
-
-                        {qty === 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => handleAddToCart(dish)}
-                            className="h-10 px-4 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[13px] font-bold flex items-center gap-1.5 transition-colors shrink-0"
-                          >
-                            <Plus className="w-4 h-4" strokeWidth={2.4} />
-                            <span>{lang === 'ar' ? 'أضف' : 'Bestellen'}</span>
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-1.5 bg-[#FFF3E6] rounded-[12px] p-1 border border-[#FF8000]/30">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateQty(dish.id, -1)}
-                              aria-label="Decrease quantity"
-                              className="w-8 h-8 rounded-[10px] bg-white text-[#242E30] hover:text-[#FF8000] flex items-center justify-center shadow-xs"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-6 text-center text-[13px] font-extrabold text-[#242E30] tabular-nums">
-                              {qty}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateQty(dish.id, 1)}
-                              aria-label="Increase quantity"
-                              className="w-8 h-8 rounded-[10px] bg-[#FF8000] text-white hover:bg-[#E67300] flex items-center justify-center"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  </article>
-                );
-              })}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {items.map((dish) => {
+                        const activeVariant = getSelectedVariant(dish);
+                        const qty = getQty(dish.id, activeVariant);
+                        return (
+                          <article
+                            key={dish.id}
+                            className="bg-white rounded-[12px] p-4 border border-[#EAE5DF]/85 shadow-[0_2px_10px_rgba(36,46,48,0.04)] hover:shadow-[0_8px_22px_rgba(36,46,48,0.08)] transition-shadow flex flex-col justify-between gap-3"
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="font-display text-[15px] font-bold text-[#242E30] leading-snug">
+                                  {dish.itemNumber && (
+                                    <span className="text-[#FF8000] tabular-nums me-1.5">
+                                      {dish.itemNumber}.
+                                    </span>
+                                  )}
+                                  {lang === 'ar' ? dish.nameAr : dish.nameDe}
+                                </h4>
+                              </div>
+                              <p className="text-[12px] font-medium text-[#5A6568] mt-0.5">
+                                {lang === 'ar' ? dish.nameDe : dish.nameAr}
+                              </p>
+                              <p className="mt-1.5 text-[13px] text-[#5A6568] leading-relaxed">
+                                {lang === 'ar' ? dish.descAr : dish.descDe}
+                              </p>
+                              {dish.allergens && (
+                                <p className="mt-1 text-[11px] text-[#5A6568]/80">
+                                  Allergene: {dish.allergens}
+                                </p>
+                              )}
+                            </div>
+
+                            <MenuCardAction
+                              dish={dish}
+                              lang={lang}
+                              selectedVariant={activeVariant}
+                              onSelectVariant={(variant) => handleSelectVariant(dish.id, variant)}
+                              qty={qty}
+                              onAdd={handleAddToCart}
+                              onUpdateQty={handleUpdateQty}
+                            />
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
             </div>
           )}
         </section>
@@ -533,7 +717,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Section 4: Contact, Hours, Payment Link Config & App Download */}
+        {/* Section 4: Contact, Hours & App Download */}
         <section id="contact" className="max-w-[1280px] mx-auto px-4 sm:px-6 py-12">
           <div className="bg-white rounded-[16px] p-6 sm:p-8 border border-[#EAE5DF] shadow-[0_4px_20px_rgba(36,46,48,0.05)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5">
@@ -625,7 +809,7 @@ export default function App() {
                 {lang === 'ar' ? `عرض السلة (${cartCount})` : `Warenkorb ansehen (${cartCount})`}
               </span>
             </span>
-            <span className="tabular-nums">{formatEuro(cartSubtotal)}</span>
+            <span className="tabular-nums">{formatEuro(cartItemsWithTax)}</span>
           </button>
         </div>
       )}

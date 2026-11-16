@@ -15,24 +15,22 @@ import {
   Receipt,
 } from 'lucide-react';
 import {
+  CartEntry,
+  CartTotals,
   KAIROS_INFO,
-  KairosDish,
   buildWhatsAppOrderText,
   buildWhatsAppUrl,
+  calculateCartTotals,
   formatEuro,
+  getEntryUnitPrice,
 } from '@/src/data/kairosData';
 import { CroppedPhoto } from '@/src/components/CroppedPhoto';
-
-export interface CartEntry {
-  dish: KairosDish;
-  quantity: number;
-}
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartEntry[];
-  onUpdateQty: (dishId: string, delta: number) => void;
+  onUpdateQty: (entryKey: string, delta: number) => void;
   onClearCart: () => void;
   lang: 'ar' | 'de';
 }
@@ -75,9 +73,7 @@ export function CartDrawer({
     messageText: string;
     whatsappUrl: string;
     items: CartEntry[];
-    subtotal: number;
-    deliveryFee: number;
-    total: number;
+    totals: CartTotals;
     customerName: string;
     locationLabel: string;
   } | null>(null);
@@ -85,12 +81,7 @@ export function CartDrawer({
 
   if (!isOpen) return null;
 
-  const subtotal = cart.reduce((sum, item) => sum + item.dish.price * item.quantity, 0);
-  const deliveryFee =
-    orderMode === 'pickup' || subtotal === 0 || subtotal >= KAIROS_INFO.freeDeliveryThreshold
-      ? 0
-      : KAIROS_INFO.deliveryFee;
-  const total = subtotal + deliveryFee;
+  const totals = calculateCartTotals(cart, orderMode);
 
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
@@ -103,7 +94,9 @@ export function CartDrawer({
       const a = data.address;
       if (!a) return null;
       const street = [a.road, a.house_number].filter(Boolean).join(' ');
-      const city = [a.postcode, a.city || a.town || a.village || a.suburb].filter(Boolean).join(' ');
+      const city = [a.postcode, a.city || a.town || a.village || a.suburb]
+        .filter(Boolean)
+        .join(' ');
       const formatted = [street, city].filter(Boolean).join(', ');
       return formatted || null;
     } catch {
@@ -149,7 +142,6 @@ export function CartDrawer({
     };
 
     const onGeoError = (err: GeolocationPositionError) => {
-      // If high-accuracy timed out, try coarse network location once before showing manual picker
       if (err.code === 3) {
         navigator.geolocation.getCurrentPosition(
           onGeoSuccess,
@@ -229,9 +221,7 @@ export function CartDrawer({
       paymentLink,
       notes,
       items: cart,
-      subtotal,
-      deliveryFee,
-      total,
+      totals,
       lang,
     });
     const whatsappUrl = buildWhatsAppUrl(messageText);
@@ -241,9 +231,7 @@ export function CartDrawer({
       messageText,
       whatsappUrl,
       items: [...cart],
-      subtotal,
-      deliveryFee,
-      total,
+      totals,
       customerName: customerName.trim(),
       locationLabel: orderMode === 'pickup' ? KAIROS_INFO.address : address.trim(),
     });
@@ -317,7 +305,7 @@ export function CartDrawer({
             <div className="rounded-[12px] bg-white border border-[#EAE5DF] shadow-xs overflow-hidden">
               <div className="px-4 py-3 bg-[#F8F5F2] border-b border-[#EAE5DF] flex items-center justify-between">
                 <span className="font-display text-[13px] font-bold text-[#242E30]">
-                  {lang === 'ar' ? 'الفاتورة التفصيلية' : 'Detaillierte Rechnung'}
+                  {lang === 'ar' ? 'الفاتورة التفصيلية (شاملة الضريبة)' : 'Detaillierte Rechnung (inkl. MwSt.)'}
                 </span>
                 <span className="text-[12px] font-semibold text-[#FF8000] tabular-nums">
                   #{dispatchedOrder.orderNumber}
@@ -336,41 +324,70 @@ export function CartDrawer({
               </div>
 
               <div className="divide-y divide-[#EAE5DF]/80 px-4">
-                {dispatchedOrder.items.map(({ dish, quantity }) => (
-                  <div key={dish.id} className="py-2.5 flex items-start justify-between gap-3 text-[13px]">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-[#242E30]">
-                        {lang === 'ar' ? dish.nameAr : dish.nameDe}
-                      </p>
-                      <p className="text-[11px] text-[#5A6568] tabular-nums">
-                        {quantity} × {formatEuro(dish.price)}
-                      </p>
+                {dispatchedOrder.items.map((entry) => {
+                  const unitPrice = getEntryUnitPrice(entry);
+                  const { dish, variant, quantity } = entry;
+                  return (
+                    <div key={entry.key} className="py-2.5 flex items-start justify-between gap-3 text-[13px]">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[#242E30]">
+                          {dish.itemNumber ? `#${dish.itemNumber} ` : ''}
+                          {lang === 'ar' ? dish.nameAr : dish.nameDe}
+                          {variant ? ` (${lang === 'ar' ? variant.labelAr : variant.labelDe})` : ''}
+                        </p>
+                        <p className="text-[11px] text-[#5A6568] tabular-nums">
+                          {quantity} × {formatEuro(unitPrice)} ·{' '}
+                          {dish.taxRate === 0.19
+                            ? lang === 'ar'
+                              ? 'ضريبة 19%'
+                              : '19% MwSt.'
+                            : lang === 'ar'
+                              ? 'ضريبة 7%'
+                              : '7% MwSt.'}
+                        </p>
+                      </div>
+                      <span className="font-bold text-[#242E30] tabular-nums shrink-0">
+                        {formatEuro(unitPrice * quantity)}
+                      </span>
                     </div>
-                    <span className="font-bold text-[#242E30] tabular-nums shrink-0">
-                      {formatEuro(dish.price * quantity)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="px-4 py-3 bg-[#F8F5F2]/70 border-t border-[#EAE5DF] space-y-1.5 text-[13px]">
                 <div className="flex justify-between text-[#5A6568] tabular-nums">
-                  <span>{lang === 'ar' ? 'المجموع الفرعي' : 'Zwischensumme'}</span>
-                  <span>{formatEuro(dispatchedOrder.subtotal)}</span>
+                  <span>{lang === 'ar' ? 'المجموع الفرعي (صافي)' : 'Zwischensumme (Netto)'}</span>
+                  <span>{formatEuro(dispatchedOrder.totals.subtotal)}</span>
                 </div>
+
+                {dispatchedOrder.totals.foodTax > 0 && (
+                  <div className="flex justify-between text-[#5A6568] tabular-nums">
+                    <span>{lang === 'ar' ? 'ضريبة الأكل (7%)' : 'MwSt. Speisen (7%)'}</span>
+                    <span>+{formatEuro(dispatchedOrder.totals.foodTax)}</span>
+                  </div>
+                )}
+
+                {dispatchedOrder.totals.drinksTax > 0 && (
+                  <div className="flex justify-between text-[#5A6568] tabular-nums">
+                    <span>{lang === 'ar' ? 'ضريبة المشروبات (19%)' : 'MwSt. Getränke (19%)'}</span>
+                    <span>+{formatEuro(dispatchedOrder.totals.drinksTax)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-[#5A6568] tabular-nums">
                   <span>{lang === 'ar' ? 'رسوم التوصيل' : 'Liefergebühr'}</span>
                   <span>
-                    {dispatchedOrder.deliveryFee === 0
+                    {dispatchedOrder.totals.deliveryFee === 0
                       ? lang === 'ar'
                         ? 'مجاني (0,00 €)'
                         : 'Kostenlos (0,00 €)'
-                      : formatEuro(dispatchedOrder.deliveryFee)}
+                      : formatEuro(dispatchedOrder.totals.deliveryFee)}
                   </span>
                 </div>
+
                 <div className="flex justify-between items-center pt-2 border-t border-[#EAE5DF] font-display text-[16px] font-extrabold text-[#242E30] tabular-nums">
                   <span>{lang === 'ar' ? 'المجموع النهائي' : 'Gesamtbetrag'}</span>
-                  <span className="text-[#FF8000]">{formatEuro(dispatchedOrder.total)}</span>
+                  <span className="text-[#FF8000]">{formatEuro(dispatchedOrder.totals.total)}</span>
                 </div>
               </div>
             </div>
@@ -384,8 +401,8 @@ export function CartDrawer({
               <MessageCircle className="w-5 h-5" />
               <span>
                 {lang === 'ar'
-                  ? `إرسال الفاتورة عبر واتساب (${formatEuro(dispatchedOrder.total)})`
-                  : `Rechnung per WhatsApp senden (${formatEuro(dispatchedOrder.total)})`}
+                  ? `إرسال الفاتورة عبر واتساب (${formatEuro(dispatchedOrder.totals.total)})`
+                  : `Rechnung per WhatsApp senden (${formatEuro(dispatchedOrder.totals.total)})`}
               </span>
               <ExternalLink className="w-4 h-4 opacity-80" />
             </a>
@@ -464,8 +481,8 @@ export function CartDrawer({
             </p>
             <p className="text-[13px] text-[#5A6568] mt-1 max-w-xs">
               {lang === 'ar'
-                ? 'اختر وجباتك المفضلة من المشاوي والمناقيش والتورتات المنزلية لإرسال طلبك عبر واتساب.'
-                : 'Wählen Sie frische Grillgerichte, Manakish oder hausgemachte Torten aus unserer Speisekarte.'}
+                ? 'اختر وجباتك ومشروباتك المفضلة لإرسال طلبك عبر واتساب مع الفاتورة التفصيلية.'
+                : 'Wählen Sie Speisen und Getränke aus unserer Speisekarte.'}
             </p>
             <button
               type="button"
@@ -480,53 +497,62 @@ export function CartDrawer({
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {/* Items */}
               <div className="divide-y divide-[#EAE5DF]">
-                {cart.map(({ dish, quantity }) => (
-                  <div key={dish.id} className="py-3 first:pt-0 flex items-center gap-3">
-                    <CroppedPhoto
-                      src={dish.image}
-                      alt={lang === 'ar' ? dish.nameAr : dish.nameDe}
-                      cropPosition={dish.cropPosition}
-                      cropScale={dish.cropScale}
-                      className="w-14 h-14 rounded-[12px] shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-display text-[13px] font-bold text-[#242E30] truncate">
-                        {lang === 'ar' ? dish.nameAr : dish.nameDe}
-                      </p>
-                      <p className="text-[12px] text-[#5A6568] tabular-nums">
-                        {formatEuro(dish.price)} × {quantity} ={' '}
-                        <strong className="text-[#242E30]">
-                          {formatEuro(dish.price * quantity)}
-                        </strong>
-                      </p>
+                {cart.map((entry) => {
+                  const unitPrice = getEntryUnitPrice(entry);
+                  const { dish, variant, quantity } = entry;
+                  return (
+                    <div key={entry.key} className="py-3 first:pt-0 flex items-center gap-3">
+                      <CroppedPhoto
+                        src={dish.image}
+                        alt={lang === 'ar' ? dish.nameAr : dish.nameDe}
+                        cropPosition={dish.cropPosition}
+                        cropScale={dish.cropScale}
+                        className="w-14 h-14 rounded-[12px] shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-display text-[13px] font-bold text-[#242E30] truncate">
+                          {dish.itemNumber ? `#${dish.itemNumber} ` : ''}
+                          {lang === 'ar' ? dish.nameAr : dish.nameDe}
+                          {variant ? ` (${lang === 'ar' ? variant.labelAr : variant.labelDe})` : ''}
+                        </p>
+                        <p className="text-[12px] text-[#5A6568] tabular-nums">
+                          {formatEuro(unitPrice)} × {quantity} ={' '}
+                          <strong className="text-[#242E30]">
+                            {formatEuro(unitPrice * quantity)}
+                          </strong>{' '}
+                          <span className="text-[11px]">
+                            ({dish.taxRate === 0.19 ? '19%' : '7%'})
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => onUpdateQty(entry.key, -1)}
+                          aria-label="Decrease quantity"
+                          className="w-8 h-8 rounded-[10px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] flex items-center justify-center"
+                        >
+                          {quantity === 1 ? (
+                            <Trash2 className="w-3.5 h-3.5 text-[#5A6568]" />
+                          ) : (
+                            <Minus className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <span className="w-6 text-center text-[13px] font-bold tabular-nums">
+                          {quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onUpdateQty(entry.key, 1)}
+                          aria-label="Increase quantity"
+                          className="w-8 h-8 rounded-[10px] bg-[#FFF3E6] hover:bg-[#FF8000] text-[#FF8000] hover:text-white flex items-center justify-center transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => onUpdateQty(dish.id, -1)}
-                        aria-label="Decrease quantity"
-                        className="w-8 h-8 rounded-[10px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] flex items-center justify-center"
-                      >
-                        {quantity === 1 ? (
-                          <Trash2 className="w-3.5 h-3.5 text-[#5A6568]" />
-                        ) : (
-                          <Minus className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      <span className="w-6 text-center text-[13px] font-bold tabular-nums">
-                        {quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => onUpdateQty(dish.id, 1)}
-                        aria-label="Increase quantity"
-                        className="w-8 h-8 rounded-[10px] bg-[#FFF3E6] hover:bg-[#FF8000] text-[#FF8000] hover:text-white flex items-center justify-center transition-colors"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Delivery vs Pickup */}
@@ -708,37 +734,57 @@ export function CartDrawer({
                 </div>
               )}
 
-              {/* Live Detailed Invoice Preview */}
+              {/* Live Detailed Invoice Preview with 7% & 19% VAT Breakdown */}
               <div className="rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] p-3.5 space-y-2">
                 <p className="font-display text-[12px] font-bold text-[#242E30]">
-                  {lang === 'ar' ? 'ملخص الفاتورة التفصيلية' : 'Rechnungsübersicht'}
+                  {lang === 'ar'
+                    ? 'ملخص الفاتورة التفصيلية والضرائب'
+                    : 'Rechnungsübersicht & MwSt.'}
                 </p>
                 <div className="space-y-1 text-[12px]">
-                  {cart.map(({ dish, quantity }) => (
-                    <div key={dish.id} className="flex justify-between text-[#5A6568] tabular-nums">
-                      <span className="truncate pe-2">
-                        {quantity} × {lang === 'ar' ? dish.nameAr : dish.nameDe} (
-                        {formatEuro(dish.price)})
-                      </span>
-                      <span className="font-semibold text-[#242E30] shrink-0">
-                        {formatEuro(dish.price * quantity)}
-                      </span>
-                    </div>
-                  ))}
+                  {cart.map((entry) => {
+                    const unitPrice = getEntryUnitPrice(entry);
+                    const { dish, variant, quantity } = entry;
+                    return (
+                      <div key={entry.key} className="flex justify-between text-[#5A6568] tabular-nums">
+                        <span className="truncate pe-2">
+                          {quantity} × {dish.itemNumber ? `#${dish.itemNumber} ` : ''}
+                          {lang === 'ar' ? dish.nameAr : dish.nameDe}
+                          {variant ? ` (${lang === 'ar' ? variant.labelAr : variant.labelDe})` : ''} (
+                          {formatEuro(unitPrice)})
+                        </span>
+                        <span className="font-semibold text-[#242E30] shrink-0">
+                          {formatEuro(unitPrice * quantity)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="pt-2 border-t border-[#EAE5DF] space-y-1 text-[12px] tabular-nums">
                   <div className="flex justify-between text-[#5A6568]">
-                    <span>{lang === 'ar' ? 'المجموع الفرعي' : 'Zwischensumme'}</span>
-                    <span>{formatEuro(subtotal)}</span>
+                    <span>{lang === 'ar' ? 'المجموع الفرعي (صافي)' : 'Zwischensumme (Netto)'}</span>
+                    <span>{formatEuro(totals.subtotal)}</span>
                   </div>
+                  {totals.foodTax > 0 && (
+                    <div className="flex justify-between text-[#5A6568]">
+                      <span>{lang === 'ar' ? 'ضريبة الأكل (7%)' : 'MwSt. Speisen (7%)'}</span>
+                      <span>+{formatEuro(totals.foodTax)}</span>
+                    </div>
+                  )}
+                  {totals.drinksTax > 0 && (
+                    <div className="flex justify-between text-[#5A6568]">
+                      <span>{lang === 'ar' ? 'ضريبة المشروبات (19%)' : 'MwSt. Getränke (19%)'}</span>
+                      <span>+{formatEuro(totals.drinksTax)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-[#5A6568]">
                     <span>{lang === 'ar' ? 'رسوم التوصيل' : 'Liefergebühr'}</span>
                     <span>
-                      {deliveryFee === 0
+                      {totals.deliveryFee === 0
                         ? lang === 'ar'
                           ? 'مجاني (0,00 €)'
                           : 'Kostenlos (0,00 €)'
-                        : formatEuro(deliveryFee)}
+                        : formatEuro(totals.deliveryFee)}
                     </span>
                   </div>
                 </div>
@@ -747,7 +793,7 @@ export function CartDrawer({
 
             {/* Footer Totals & WhatsApp Submit */}
             <div className="p-5 border-t border-[#EAE5DF] bg-white space-y-2 shrink-0">
-              {orderMode === 'delivery' && subtotal < KAIROS_INFO.freeDeliveryThreshold && (
+              {orderMode === 'delivery' && totals.subtotal < KAIROS_INFO.freeDeliveryThreshold && (
                 <p className="text-[11px] text-[#5A6568]">
                   {lang === 'ar'
                     ? `توصيل مجاني للطلبات فوق ${formatEuro(KAIROS_INFO.freeDeliveryThreshold)}`
@@ -755,8 +801,10 @@ export function CartDrawer({
                 </p>
               )}
               <div className="flex justify-between text-[17px] font-extrabold text-[#242E30] tabular-nums">
-                <span>{lang === 'ar' ? 'المجموع النهائي' : 'Gesamtbetrag'}</span>
-                <span className="text-[#FF8000]">{formatEuro(total)}</span>
+                <span>
+                  {lang === 'ar' ? 'المجموع النهائي (شامل الضريبة)' : 'Gesamtbetrag (inkl. MwSt.)'}
+                </span>
+                <span className="text-[#FF8000]">{formatEuro(totals.total)}</span>
               </div>
 
               <button
@@ -766,8 +814,8 @@ export function CartDrawer({
                 <MessageCircle className="w-4 h-4" />
                 <span>
                   {lang === 'ar'
-                    ? `عرض الفاتورة وإرسال عبر واتساب (${formatEuro(total)})`
-                    : `Rechnung & WhatsApp Bestellung (${formatEuro(total)})`}
+                    ? `عرض الفاتورة وإرسال عبر واتساب (${formatEuro(totals.total)})`
+                    : `Rechnung & WhatsApp Bestellung (${formatEuro(totals.total)})`}
                 </span>
               </button>
             </div>
