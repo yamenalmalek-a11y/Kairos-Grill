@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #FF8000;
+    --color-primary-hover: #E67300;
+    --color-surface: #FFFFFF;
+    --color-canvas: #F8F5F2;
+    --color-ink: #242E30;
+    --color-ink-muted: #5A6568;
+    --color-hairline: #EAE5DF;
+  }
+
+  body {
+    font-family: 'Cairo', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #F8F5F2;
+    color: #242E30;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Cairo', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
