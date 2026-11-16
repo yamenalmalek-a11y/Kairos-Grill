@@ -1,6 +1,6 @@
 {
   "name": "Liefero — Food Delivery Mobile UI/UX",
   "description": "Modern three-screen mobile food delivery UI/UX featuring restaurant discovery, interactive menu ordering, and live courier tracking.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

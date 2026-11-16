@@ -291,49 +291,55 @@ export interface WhatsAppOrderPayload {
 export function buildWhatsAppOrderText(payload: WhatsAppOrderPayload): string {
   const itemLines = payload.items
     .map(
-      ({ dish, quantity }) =>
-        `• ${quantity}x ${dish.nameDe} (${dish.nameAr}) — ${formatEuro(dish.price * quantity)}`
+      ({ dish, quantity }, index) =>
+        `${index + 1}. *${dish.nameAr}* (${dish.nameDe})\n   ${quantity} × ${formatEuro(dish.price)} = *${formatEuro(dish.price * quantity)}*`
     )
     .join('\n');
 
   const locationLine =
     payload.orderMode === 'pickup'
-      ? `Abholung im Restaurant (${KAIROS_INFO.address})`
+      ? `استلام من المطعم (${KAIROS_INFO.address})`
       : payload.address;
 
   const mapsLine = payload.gpsCoords
-    ? `\n📍 GPS Standort: https://maps.google.com/?q=${payload.gpsCoords.lat.toFixed(6)},${payload.gpsCoords.lng.toFixed(6)}`
+    ? `\n📍 رابط الموقع (Google Maps): https://maps.google.com/?q=${payload.gpsCoords.lat.toFixed(6)},${payload.gpsCoords.lng.toFixed(6)}`
     : '';
 
   const paymentMethodLabel =
     payload.paymentMethod === 'payment_link'
-      ? 'Online per Zahlungslink (الدفع عبر الرابط)'
-      : 'Barzahlung bei Lieferung / Abholung (الدفع عند الاستلام)';
+      ? 'الدفع الإلكتروني عبر الرابط (Online)'
+      : 'نقداً عند الاستلام (Barzahlung)';
 
   const paymentLinkLine =
     payload.paymentLink && payload.paymentLink.trim()
-      ? `\n💳 رابط الدفع / Zahlungslink:\n${payload.paymentLink.trim()}`
-      : payload.paymentMethod === 'payment_link'
-        ? '\n💳 رابط الدفع / Zahlungslink: (يرجى إرسال رابط الدفع للعميل)'
-        : '';
+      ? `\n💳 رابط الدفع:\n${payload.paymentLink.trim()}`
+      : '';
 
-  const notesLine = payload.notes?.trim() ? `\n📝 ملاحظات / Hinweise: ${payload.notes.trim()}` : '';
+  const notesLine = payload.notes?.trim() ? `\n📝 ملاحظات: ${payload.notes.trim()}` : '';
+
+  const deliveryLine =
+    payload.orderMode === 'pickup'
+      ? 'استلام من المطعم (0,00 €)'
+      : payload.deliveryFee === 0
+        ? 'مجاني (0,00 €)'
+        : formatEuro(payload.deliveryFee);
 
   return [
-    `🍽️ *طلب جديد — Kairos Grill (${payload.orderNumber})*`,
+    `🧾 *فاتورة طلب جديدة — Kairos Grill*`,
+    `رقم الطلب: *#${payload.orderNumber}*`,
     `━━━━━━━━━━━━━━━━━━━━`,
-    `👤 *الاسم / Name:* ${payload.customerName}`,
-    `📞 *الهاتف / Telefon:* ${payload.customerPhone}`,
-    `📍 *الموقع / Adresse:* ${locationLine}${mapsLine}`,
+    `👤 *الاسم:* ${payload.customerName}`,
+    `📞 *الهاتف:* ${payload.customerPhone}`,
+    `📍 *الموقع / العنوان:* ${locationLine}${mapsLine}`,
     ``,
-    `🛒 *الطلب / Bestellung:*`,
+    `📋 *تفاصيل الفاتورة:*`,
     itemLines,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `المجموع الفرعي: ${formatEuro(payload.subtotal)}`,
+    `رسوم التوصيل: ${deliveryLine}`,
+    `💰 *المجموع النهائي: ${formatEuro(payload.total)}*`,
     ``,
-    `Subtotal: ${formatEuro(payload.subtotal)}`,
-    `Liefergebühr: ${payload.deliveryFee === 0 ? 'Kostenlos (0,00 €)' : formatEuro(payload.deliveryFee)}`,
-    `💰 *الإجمالي / Gesamtbetrag: ${formatEuro(payload.total)}*`,
-    ``,
-    `💳 *طريقة الدفع / Zahlung:* ${paymentMethodLabel}${paymentLinkLine}${notesLine}`,
+    `💳 *طريقة الدفع:* ${paymentMethodLabel}${paymentLinkLine}${notesLine}`,
   ].join('\n');
 }
 
