@@ -59,7 +59,7 @@ export function PWAInstallButton({ lang, variant = 'primary' }: PWAInstallButton
                 <img
                   src="/pwa-192x192.png"
                   alt="Kairos Grill App Icon"
-                  className="w-11 h-11 rounded-[12px] border border-[#EAE5DF] bg-white object-contain shrink-0"
+                  className="w-12 h-12 object-contain shrink-0"
                 />
                 <div>
                   <h3 id="pwa-install-title" className="font-display text-[17px] font-bold text-[#242E30]">
