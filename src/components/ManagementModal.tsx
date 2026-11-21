@@ -3,6 +3,7 @@ import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/aut
 import {
   CheckCircle2,
   Download,
+  ExternalLink,
   Lock,
   LogOut,
   MessageSquareWarning,
@@ -11,7 +12,15 @@ import {
   ShieldCheck,
   X,
 } from 'lucide-react';
-import { ADMIN_EMAIL, auth, googleProvider } from '@/src/firebase';
+import {
+  ADMIN_EMAIL,
+  AUTHORIZED_ADMIN_FALLBACK_URL,
+  FIREBASE_AUTH_SETTINGS_URL,
+  auth,
+  formatFirebaseAuthError,
+  googleProvider,
+  isUnauthorizedDomainError,
+} from '@/src/firebase';
 import { ComplaintCategory, createComplaint } from '@/src/services/kairosFirebase';
 import { PWAInstallButton } from '@/src/components/PWAInstallButton';
 
@@ -48,6 +57,7 @@ export function ManagementModal({
   const [showAdminDownloadGate, setShowAdminDownloadGate] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isDomainError, setIsDomainError] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
 
   useEffect(() => {
@@ -103,17 +113,13 @@ export function ManagementModal({
 
   const handleGoogleSignIn = async () => {
     setAuthError(null);
+    setIsDomainError(false);
     setSigningIn(true);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setAuthError(
-        err instanceof Error
-          ? err.message
-          : lang === 'ar'
-            ? 'تعذّر تسجيل الدخول بحساب Google.'
-            : 'Google-Anmeldung fehlgeschlagen.'
-      );
+      setIsDomainError(isUnauthorizedDomainError(err));
+      setAuthError(formatFirebaseAuthError(err, lang));
     } finally {
       setSigningIn(false);
     }
@@ -129,18 +135,19 @@ export function ManagementModal({
   const handleSignOut = async () => {
     await signOut(auth);
     setAuthError(null);
+    setIsDomainError(false);
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#242E30]/60 backdrop-blur-xs p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#242E30]/60 backdrop-blur-xs p-3 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="management-modal-title"
     >
-      <div className="w-full max-w-lg bg-white rounded-[16px] shadow-2xl border border-[#EAE5DF] overflow-hidden my-auto">
+      <div className="w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] bg-white rounded-[16px] shadow-2xl border border-[#EAE5DF] overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-[#EAE5DF] flex items-center justify-between gap-3 bg-[#F8F5F2]/70">
+        <div className="px-5 py-4 border-b border-[#EAE5DF] flex items-center justify-between gap-3 bg-[#F8F5F2]/70 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-[10px] bg-[#FFF3E6] text-[#FF8000] flex items-center justify-center shrink-0">
               <MessageSquareWarning className="w-5 h-5" />
@@ -170,7 +177,7 @@ export function ManagementModal({
           </button>
         </div>
 
-        <div className="p-5 sm:p-6 space-y-5 max-h-[82vh] overflow-y-auto">
+        <div className="p-5 sm:p-6 space-y-5 flex-1 overflow-y-auto">
           {/* Complaints Section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2">
@@ -368,7 +375,41 @@ export function ManagementModal({
                           : 'Mit Google Admin-Konto anmelden'}
                     </button>
                     {authError && (
-                      <p className="text-[11px] font-semibold text-red-600">{authError}</p>
+                      <div className="p-3 rounded-[10px] bg-red-50 border border-red-200 space-y-2 text-start">
+                        <p className="text-[11px] font-semibold text-red-700 leading-relaxed">
+                          {authError}
+                        </p>
+                        {isDomainError && (
+                          <div className="flex flex-col gap-1.5 pt-1">
+                            <a
+                              href={AUTHORIZED_ADMIN_FALLBACK_URL}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-9 px-3 rounded-[8px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5"
+                            >
+                              <span>
+                                {lang === 'ar'
+                                  ? 'الدخول وتنزيل تطبيق الإدارة عبر الرابط المعتمد الآن'
+                                  : 'Über autorisierten Link direkt anmelden'}
+                              </span>
+                              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                            </a>
+                            <a
+                              href={FIREBASE_AUTH_SETTINGS_URL}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-8 px-3 rounded-[8px] bg-white border border-[#EAE5DF] text-[#242E30] hover:text-[#FF8000] text-[11px] font-semibold inline-flex items-center justify-center gap-1.5"
+                            >
+                              <span>
+                                {lang === 'ar'
+                                  ? 'إضافة هذا النطاق في إعدادات Firebase'
+                                  : 'Domain in Firebase freigeben'}
+                              </span>
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ) : !isAuthorizedAdmin ? (

@@ -128,8 +128,8 @@ export function PWAInstallButton({ lang, variant = 'primary' }: PWAInstallButton
                 </p>
                 <p className="mt-1.5 text-[13px] text-[#242E30] leading-relaxed">
                   {lang === 'ar'
-                    ? 'افتح قائمة المتصفح (⋮) واختر «تثبيت التطبيق» أو «الإضافة إلى الشاشة الرئيسية» للتثبيت الفوري.'
-                    : 'Öffnen Sie das Chrome-Menü (⋮) und tippen Sie auf „App installieren“ oder „Zum Startbildschirm hinzufügen“.'}
+                    ? 'افتح قائمة المتصفح (⋮) واختر «تثبيت التطبيق» أو «الإضافة إلى الشاشة الرئيسية». إذا فتحت الرابط من داخل تطبيق آخر، اختر أولاً «الفتح في Chrome».'
+                    : 'Öffnen Sie das Chrome-Menü (⋮) und tippen Sie auf „App installieren“ oder „Zum Startbildschirm hinzufügen“ (bei In-App-Browsern zuerst „In Chrome öffnen“ wählen).'}
                 </p>
                 {isInstallable && (
                   <button

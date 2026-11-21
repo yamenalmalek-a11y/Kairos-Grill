@@ -73,3 +73,53 @@ async function testConnection() {
 }
 
 void testConnection();
+
+export const FIREBASE_AUTH_SETTINGS_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/settings`;
+export const AUTHORIZED_ADMIN_FALLBACK_URL =
+  'https://ais-pre-shjmkjfm3cngp7ki3mavr7-447650977309.europe-west2.run.app/?admin=1';
+
+export function isUnauthorizedDomainError(error: unknown): boolean {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code || '')
+      : '';
+  const msg = error instanceof Error ? error.message : String(error || '');
+  return code === 'auth/unauthorized-domain' || msg.includes('auth/unauthorized-domain');
+}
+
+export function formatFirebaseAuthError(error: unknown, lang: 'ar' | 'de'): string {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code || '')
+      : '';
+  const msg = error instanceof Error ? error.message : String(error || '');
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
+
+  if (isUnauthorizedDomainError(error)) {
+    return lang === 'ar'
+      ? `النطاق (${host}) غير مضاف بعد في إعدادات Firebase Authentication لتسجيل دخول Google.`
+      : `Die Domain (${host}) muss zuerst in Firebase Authentication unter „Autorisierte Domains“ freigegeben werden.`;
+  }
+
+  if (code === 'auth/popup-blocked' || msg.includes('auth/popup-blocked')) {
+    return lang === 'ar'
+      ? 'تم حظر نافذة تسجيل الدخول المنبثقة من المتصفح، يرجى السماح بالنوافذ المنبثقة أو فتح الرابط في متصفح Chrome.'
+      : 'Das Anmeldefenster wurde vom Browser blockiert. Bitte Pop-ups erlauben oder in Chrome öffnen.';
+  }
+
+  if (
+    code === 'auth/popup-closed-by-user' ||
+    code === 'auth/cancelled-popup-request' ||
+    msg.includes('popup-closed-by-user')
+  ) {
+    return lang === 'ar'
+      ? 'تم إغلاق نافذة تسجيل الدخول قبل إتمام العملية.'
+      : 'Das Anmeldefenster wurde vorzeitig geschlossen.';
+  }
+
+  return lang === 'ar'
+    ? 'تعذّر تسجيل الدخول بحساب Google، يرجى المحاولة مرة أخرى.'
+    : 'Google-Anmeldung fehlgeschlagen. Bitte erneut versuchen.';
+}
+
+

@@ -15,7 +15,15 @@ import {
   ShieldAlert,
   Truck,
 } from 'lucide-react';
-import { ADMIN_EMAIL, auth, googleProvider } from '@/src/firebase';
+import {
+  ADMIN_EMAIL,
+  AUTHORIZED_ADMIN_FALLBACK_URL,
+  FIREBASE_AUTH_SETTINGS_URL,
+  auth,
+  formatFirebaseAuthError,
+  googleProvider,
+  isUnauthorizedDomainError,
+} from '@/src/firebase';
 import { KAIROS_ASSETS, formatEuro } from '@/src/data/kairosData';
 import {
   ComplaintCategory,
@@ -125,6 +133,7 @@ export function AdminDashboard({
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isDomainError, setIsDomainError] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'orders' | 'complaints'>('orders');
   const [orderFilter, setOrderFilter] = useState<'all' | OrderStatus>('all');
@@ -181,21 +190,19 @@ export function AdminDashboard({
 
   const handleSignIn = async () => {
     setAuthError(null);
+    setIsDomainError(false);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setAuthError(
-        err instanceof Error
-          ? err.message
-          : lang === 'ar'
-            ? 'تعذّر تسجيل الدخول.'
-            : 'Anmeldung fehlgeschlagen.'
-      );
+      setIsDomainError(isUnauthorizedDomainError(err));
+      setAuthError(formatFirebaseAuthError(err, lang));
     }
   };
 
   const handleSignOut = async () => {
     await signOut(auth);
+    setAuthError(null);
+    setIsDomainError(false);
     initialOrdersLoadedRef.current = false;
     seenOrderIdsRef.current.clear();
   };
@@ -309,7 +316,41 @@ export function AdminDashboard({
             )}
 
             {authError && (
-              <p className="text-[12px] font-semibold text-red-600">{authError}</p>
+              <div className="p-3.5 rounded-[12px] bg-red-50 border border-red-200 space-y-2.5 text-start">
+                <p className="text-[12px] font-semibold text-red-700 leading-relaxed">
+                  {authError}
+                </p>
+                {isDomainError && (
+                  <div className="flex flex-col gap-2">
+                    <a
+                      href={AUTHORIZED_ADMIN_FALLBACK_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-10 px-4 rounded-[10px] bg-[#242E30] hover:bg-[#354245] text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5"
+                    >
+                      <span>
+                        {lang === 'ar'
+                          ? 'فتح وتنزيل تطبيق الإدارة من الرابط المعتمد'
+                          : 'Über autorisierten Admin-Link öffnen'}
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    </a>
+                    <a
+                      href={FIREBASE_AUTH_SETTINGS_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-9 px-3 rounded-[10px] bg-white border border-[#EAE5DF] text-[#242E30] hover:text-[#FF8000] text-[11px] font-semibold inline-flex items-center justify-center gap-1.5"
+                    >
+                      <span>
+                        {lang === 'ar'
+                          ? 'إضافة هذا النطاق في إعدادات Firebase'
+                          : 'Domain in Firebase freigeben'}
+                      </span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                    </a>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </main>
