@@ -74,9 +74,20 @@ async function testConnection() {
 
 void testConnection();
 
-export const FIREBASE_AUTH_SETTINGS_URL = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/settings`;
 export const AUTHORIZED_ADMIN_FALLBACK_URL =
   'https://ais-pre-shjmkjfm3cngp7ki3mavr7-447650977309.europe-west2.run.app/?admin=1';
+
+export function isNativeAuthHost(): boolean {
+  if (typeof window === 'undefined') return true;
+  const host = window.location.hostname.toLowerCase();
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.run.app') ||
+    host.endsWith('.firebaseapp.com') ||
+    host.endsWith('.web.app')
+  );
+}
 
 export function isUnauthorizedDomainError(error: unknown): boolean {
   const code =
@@ -93,12 +104,11 @@ export function formatFirebaseAuthError(error: unknown, lang: 'ar' | 'de'): stri
       ? String((error as { code?: unknown }).code || '')
       : '';
   const msg = error instanceof Error ? error.message : String(error || '');
-  const host = typeof window !== 'undefined' ? window.location.hostname : '';
 
   if (isUnauthorizedDomainError(error)) {
     return lang === 'ar'
-      ? `النطاق (${host}) غير مضاف بعد في إعدادات Firebase Authentication لتسجيل دخول Google.`
-      : `Die Domain (${host}) muss zuerst in Firebase Authentication unter „Autorisierte Domains“ freigegeben werden.`;
+      ? 'تسجيل الدخول بحساب Google محصور بالنطاق الرسمي للتطبيق لأسباب أمنية. اضغط على الزر أدناه للدخول وتنزيل تطبيق الإدارة مباشرة.'
+      : 'Die Google-Anmeldung ist aus Sicherheitsgründen auf die offizielle App-Domain beschränkt. Nutzen Sie den Button unten für Login & App-Download.';
   }
 
   if (code === 'auth/popup-blocked' || msg.includes('auth/popup-blocked')) {

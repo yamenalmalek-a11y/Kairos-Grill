@@ -15,10 +15,10 @@ import {
 import {
   ADMIN_EMAIL,
   AUTHORIZED_ADMIN_FALLBACK_URL,
-  FIREBASE_AUTH_SETTINGS_URL,
   auth,
   formatFirebaseAuthError,
   googleProvider,
+  isNativeAuthHost,
   isUnauthorizedDomainError,
 } from '@/src/firebase';
 import { ComplaintCategory, createComplaint } from '@/src/services/kairosFirebase';
@@ -127,7 +127,7 @@ export function ManagementModal({
 
   const handleClickAdminAppOption = async () => {
     setShowAdminDownloadGate(true);
-    if (!user) {
+    if (!user && isNativeAuthHost()) {
       await handleGoogleSignIn();
     }
   };
@@ -354,64 +354,72 @@ export function ManagementModal({
                 </div>
 
                 {!user ? (
-                  <div className="space-y-2.5">
-                    <p className="text-[12px] text-[#5A6568]">
-                      {lang === 'ar'
-                        ? 'لتنزيل تطبيق الإدارة أو فتح لوحة الطلبات، يجب تسجيل الدخول بحساب مالك المطعم المعتمد أولاً.'
-                        : 'Um die Admin-App zu installieren oder zu öffnen, melden Sie sich mit dem autorisierten Inhaber-Konto an.'}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={signingIn}
-                      onClick={handleGoogleSignIn}
-                      className="w-full h-10 rounded-[10px] bg-[#242E30] hover:bg-[#354245] disabled:opacity-60 text-white text-[12px] font-bold transition-colors"
-                    >
-                      {signingIn
-                        ? lang === 'ar'
-                          ? 'جاري تسجيل الدخول...'
-                          : 'Anmeldung...'
-                        : lang === 'ar'
-                          ? 'تسجيل الدخول بحساب الإدارة (Google)'
-                          : 'Mit Google Admin-Konto anmelden'}
-                    </button>
-                    {authError && (
-                      <div className="p-3 rounded-[10px] bg-red-50 border border-red-200 space-y-2 text-start">
-                        <p className="text-[11px] font-semibold text-red-700 leading-relaxed">
-                          {authError}
-                        </p>
-                        {isDomainError && (
-                          <div className="flex flex-col gap-1.5 pt-1">
+                  !isNativeAuthHost() ? (
+                    <div className="space-y-2.5">
+                      <p className="text-[12px] text-[#5A6568] leading-relaxed">
+                        {lang === 'ar'
+                          ? 'لتسجيل الدخول بحساب الإدارة وتنزيل التطبيق بأمان، يتم التحقق عبر البوابة الرسمية المعتمدة (مربوطة فوراً بنفس قاعدة بيانات الطلبات والشكاوي).'
+                          : 'Für den geschützten Admin-Login und App-Download nutzen Sie bitte das autorisierte Verwaltungs-Portal (direkt mit derselben Bestell-Datenbank verbunden).'}
+                      </p>
+                      <a
+                        href={AUTHORIZED_ADMIN_FALLBACK_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full h-10 px-4 rounded-[10px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[12px] font-bold inline-flex items-center justify-center gap-2 transition-colors"
+                      >
+                        <span>
+                          {lang === 'ar'
+                            ? 'تسجيل الدخول وتنزيل تطبيق الإدارة'
+                            : 'Admin-Login & App-Download öffnen'}
+                        </span>
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <p className="text-[12px] text-[#5A6568]">
+                        {lang === 'ar'
+                          ? 'لتنزيل تطبيق الإدارة أو فتح لوحة الطلبات، يجب تسجيل الدخول بحساب مالك المطعم المعتمد أولاً.'
+                          : 'Um die Admin-App zu installieren oder zu öffnen, melden Sie sich mit dem autorisierten Inhaber-Konto an.'}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={signingIn}
+                        onClick={handleGoogleSignIn}
+                        className="w-full h-10 rounded-[10px] bg-[#242E30] hover:bg-[#354245] disabled:opacity-60 text-white text-[12px] font-bold transition-colors"
+                      >
+                        {signingIn
+                          ? lang === 'ar'
+                            ? 'جاري تسجيل الدخول...'
+                            : 'Anmeldung...'
+                          : lang === 'ar'
+                            ? 'تسجيل الدخول بحساب الإدارة (Google)'
+                            : 'Mit Google Admin-Konto anmelden'}
+                      </button>
+                      {authError && (
+                        <div className="p-3 rounded-[10px] bg-red-50 border border-red-200 space-y-2 text-start">
+                          <p className="text-[11px] font-semibold text-red-700 leading-relaxed">
+                            {authError}
+                          </p>
+                          {isDomainError && (
                             <a
                               href={AUTHORIZED_ADMIN_FALLBACK_URL}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="h-9 px-3 rounded-[8px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5"
+                              className="h-9 px-3 rounded-[8px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5 w-full"
                             >
                               <span>
                                 {lang === 'ar'
-                                  ? 'الدخول وتنزيل تطبيق الإدارة عبر الرابط المعتمد الآن'
-                                  : 'Über autorisierten Link direkt anmelden'}
+                                  ? 'الدخول وتنزيل تطبيق الإدارة من البوابة المعتمدة'
+                                  : 'Über autorisiertes Portal anmelden'}
                               </span>
                               <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                             </a>
-                            <a
-                              href={FIREBASE_AUTH_SETTINGS_URL}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="h-8 px-3 rounded-[8px] bg-white border border-[#EAE5DF] text-[#242E30] hover:text-[#FF8000] text-[11px] font-semibold inline-flex items-center justify-center gap-1.5"
-                            >
-                              <span>
-                                {lang === 'ar'
-                                  ? 'إضافة هذا النطاق في إعدادات Firebase'
-                                  : 'Domain in Firebase freigeben'}
-                              </span>
-                              <ExternalLink className="w-3 h-3 shrink-0" />
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
                 ) : !isAuthorizedAdmin ? (
                   <div className="p-3 rounded-[10px] bg-red-50 border border-red-200 text-red-700 space-y-2">
                     <div className="flex items-center gap-1.5 text-[12px] font-bold">

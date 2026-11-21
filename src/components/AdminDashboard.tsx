@@ -18,10 +18,10 @@ import {
 import {
   ADMIN_EMAIL,
   AUTHORIZED_ADMIN_FALLBACK_URL,
-  FIREBASE_AUTH_SETTINGS_URL,
   auth,
   formatFirebaseAuthError,
   googleProvider,
+  isNativeAuthHost,
   isUnauthorizedDomainError,
 } from '@/src/firebase';
 import { KAIROS_ASSETS, formatEuro } from '@/src/data/kairosData';
@@ -305,6 +305,20 @@ export function AdminDashboard({
                   {lang === 'ar' ? 'تسجيل الخروج وتبديل الحساب' : 'Abmelden'}
                 </button>
               </div>
+            ) : !isNativeAuthHost() ? (
+              <a
+                href={AUTHORIZED_ADMIN_FALLBACK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-12 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white font-display font-bold text-[14px] shadow-[0_8px_20px_rgba(255,128,0,0.28)] transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <span>
+                  {lang === 'ar'
+                    ? 'تسجيل الدخول وتنزيل تطبيق الإدارة'
+                    : 'Zum autorisierten Admin-Login'}
+                </span>
+                <ExternalLink className="w-4 h-4 shrink-0" />
+              </a>
             ) : (
               <button
                 type="button"
@@ -321,34 +335,19 @@ export function AdminDashboard({
                   {authError}
                 </p>
                 {isDomainError && (
-                  <div className="flex flex-col gap-2">
-                    <a
-                      href={AUTHORIZED_ADMIN_FALLBACK_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="h-10 px-4 rounded-[10px] bg-[#242E30] hover:bg-[#354245] text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5"
-                    >
-                      <span>
-                        {lang === 'ar'
-                          ? 'فتح وتنزيل تطبيق الإدارة من الرابط المعتمد'
-                          : 'Über autorisierten Admin-Link öffnen'}
-                      </span>
-                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    </a>
-                    <a
-                      href={FIREBASE_AUTH_SETTINGS_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="h-9 px-3 rounded-[10px] bg-white border border-[#EAE5DF] text-[#242E30] hover:text-[#FF8000] text-[11px] font-semibold inline-flex items-center justify-center gap-1.5"
-                    >
-                      <span>
-                        {lang === 'ar'
-                          ? 'إضافة هذا النطاق في إعدادات Firebase'
-                          : 'Domain in Firebase freigeben'}
-                      </span>
-                      <ExternalLink className="w-3 h-3 shrink-0" />
-                    </a>
-                  </div>
+                  <a
+                    href={AUTHORIZED_ADMIN_FALLBACK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-10 px-4 rounded-[10px] bg-[#242E30] hover:bg-[#354245] text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5 w-full"
+                  >
+                    <span>
+                      {lang === 'ar'
+                        ? 'فتح وتنزيل تطبيق الإدارة من البوابة المعتمدة'
+                        : 'Über autorisiertes Admin-Portal öffnen'}
+                    </span>
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                  </a>
                 )}
               </div>
             )}
