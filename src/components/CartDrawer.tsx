@@ -25,6 +25,7 @@ import {
   getEntryUnitPrice,
 } from '@/src/data/kairosData';
 import { CroppedPhoto } from '@/src/components/CroppedPhoto';
+import { createLiveOrder } from '@/src/services/kairosFirebase';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ interface CartDrawerProps {
   onUpdateQty: (entryKey: string, delta: number) => void;
   onClearCart: () => void;
   lang: 'ar' | 'de';
+  onOrderCreated: (orderId: string, orderNumber: string) => void;
 }
 
 const ROSTOCK_AREAS = [
@@ -51,6 +53,7 @@ export function CartDrawer({
   onUpdateQty,
   onClearCart,
   lang,
+  onOrderCreated,
 }: CartDrawerProps) {
   const paymentLink = KAIROS_INFO.defaultPaymentLink;
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +70,7 @@ export function CartDrawer({
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'payment_link'>('cash');
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [dispatchedOrder, setDispatchedOrder] = useState<{
     orderNumber: string;
@@ -185,16 +189,16 @@ export function CartDrawer({
     setTimeout(() => addressInputRef.current?.focus(), 40);
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    if (cart.length === 0) return;
+    if (cart.length === 0 || isSubmitting) return;
     if (!customerName.trim()) {
       setFormError(lang === 'ar' ? 'يرجى كتابة الاسم' : 'Bitte geben Sie Ihren Namen ein.');
       return;
     }
-    if (!customerPhone.trim()) {
+    if (!customerPhone.trim() || customerPhone.trim().length < 4) {
       setFormError(
         lang === 'ar' ? 'يرجى إدخال رقم الهاتف للتواصل' : 'Bitte geben Sie Ihre Telefonnummer ein.'
       );
@@ -226,15 +230,41 @@ export function CartDrawer({
     });
     const whatsappUrl = buildWhatsAppUrl(messageText);
 
-    setDispatchedOrder({
-      orderNumber,
-      messageText,
-      whatsappUrl,
-      items: [...cart],
-      totals,
-      customerName: customerName.trim(),
-      locationLabel: orderMode === 'pickup' ? KAIROS_INFO.address : address.trim(),
-    });
+    setIsSubmitting(true);
+    try {
+      const orderId = await createLiveOrder({
+        orderNumber,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        orderMode,
+        address: address.trim(),
+        gpsCoords,
+        paymentMethod,
+        notes,
+        items: cart,
+        totals,
+      });
+
+      onOrderCreated(orderId, orderNumber);
+
+      setDispatchedOrder({
+        orderNumber,
+        messageText,
+        whatsappUrl,
+        items: [...cart],
+        totals,
+        customerName: customerName.trim(),
+        locationLabel: orderMode === 'pickup' ? KAIROS_INFO.address : address.trim(),
+      });
+    } catch {
+      setFormError(
+        lang === 'ar'
+          ? 'تعذّر إرسال الطلب حالياً. يرجى المحاولة مجدداً أو الإرسال عبر واتساب.'
+          : 'Bestellung konnte nicht gesendet werden. Bitte erneut versuchen.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCopyMessage = async () => {
@@ -301,6 +331,12 @@ export function CartDrawer({
         {/* Post-Order Confirmation & Detailed Invoice View */}
         {dispatchedOrder ? (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div className="p-3.5 rounded-[12px] bg-[#ECFDF3] border border-[#16A34A]/30 text-[13px] font-bold text-[#15803D]">
+              {lang === 'ar'
+                ? 'تم إرسال طلبك فوراً إلى مطبخ Kairos Grill! يمكنك إرسال الفاتورة عبر واتساب أو إغلاق هذه النافذة لمتابعة حالة الطلب مباشرة.'
+                : 'Ihre Bestellung wurde direkt an die Kairos Grill Küche gesendet! Sie können zusätzlich per WhatsApp senden oder den Live-Status verfolgen.'}
+            </div>
+
             {/* Detailed Receipt Card */}
             <div className="rounded-[12px] bg-white border border-[#EAE5DF] shadow-xs overflow-hidden">
               <div className="px-4 py-3 bg-[#F8F5F2] border-b border-[#EAE5DF] flex items-center justify-between">
@@ -809,13 +845,18 @@ export function CartDrawer({
 
               <button
                 type="submit"
-                className="mt-1 w-full h-12 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white font-display font-bold text-[14px] flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(255,128,0,0.3)] transition-colors"
+                disabled={isSubmitting}
+                className="mt-1 w-full h-12 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] disabled:opacity-60 text-white font-display font-bold text-[14px] flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(255,128,0,0.3)] transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>
-                  {lang === 'ar'
-                    ? `عرض الفاتورة وإرسال عبر واتساب (${formatEuro(totals.total)})`
-                    : `Rechnung & WhatsApp Bestellung (${formatEuro(totals.total)})`}
+                  {isSubmitting
+                    ? lang === 'ar'
+                      ? 'جاري إرسال الطلب للمطعم...'
+                      : 'Wird an die Küche gesendet...'
+                    : lang === 'ar'
+                      ? `تأكيد الطلب وإرساله للمطعم وواتساب (${formatEuro(totals.total)})`
+                      : `Bestellung senden & WhatsApp (${formatEuro(totals.total)})`}
                 </span>
               </button>
             </div>

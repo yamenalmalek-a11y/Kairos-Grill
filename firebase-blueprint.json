@@ -1,0 +1,277 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized restaurant administrator account allowed to manage live orders.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 120,
+          "description": "Verified administrator email."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"],
+          "description": "Administrative role."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation."
+        }
+      },
+      "required": ["email", "role", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Full customer order and itemized VAT invoice visible exclusively to restaurant administrators.",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "description": "Human-friendly order reference (e.g., KG-4821)."
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Customer name."
+        },
+        "customerPhone": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 32,
+          "description": "Customer phone number."
+        },
+        "orderMode": {
+          "type": "string",
+          "enum": ["delivery", "pickup"],
+          "description": "Delivery or pickup."
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 240,
+          "description": "Delivery address or pickup label."
+        },
+        "gpsText": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Optional latitude,longitude coordinates."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["cash", "payment_link"],
+          "description": "Selected payment method."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Optional order notes."
+        },
+        "items": {
+          "type": "array",
+          "description": "Bounded list of ordered line items (max 50)."
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Net item subtotal in EUR."
+        },
+        "foodTax": {
+          "type": "number",
+          "description": "7% food VAT in EUR."
+        },
+        "drinksTax": {
+          "type": "number",
+          "description": "19% drinks VAT in EUR."
+        },
+        "deliveryFee": {
+          "type": "number",
+          "description": "Delivery fee in EUR."
+        },
+        "total": {
+          "type": "number",
+          "description": "Grand total including VAT and delivery."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "preparing", "delivering", "completed", "cancelled"],
+          "description": "Current order lifecycle status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "orderNumber",
+        "customerName",
+        "customerPhone",
+        "orderMode",
+        "address",
+        "gpsText",
+        "paymentMethod",
+        "notes",
+        "items",
+        "subtotal",
+        "foodTax",
+        "drinksTax",
+        "deliveryFee",
+        "total",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "OrderTracking": {
+      "title": "OrderTracking",
+      "description": "Non-PII live order status record read by the customer browser after placing an order.",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "description": "Human-friendly order reference."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "preparing", "delivering", "completed", "cancelled"],
+          "description": "Current live status."
+        },
+        "statusMessageAr": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Localized Arabic status notification message."
+        },
+        "statusMessageDe": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Localized German status notification message."
+        },
+        "total": {
+          "type": "number",
+          "description": "Order grand total in EUR."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "orderNumber",
+        "status",
+        "statusMessageAr",
+        "statusMessageDe",
+        "total",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Complaint": {
+      "title": "Complaint",
+      "description": "Customer complaint or management feedback visible exclusively to restaurant administrators.",
+      "type": "object",
+      "properties": {
+        "complaintNumber": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32,
+          "description": "Human-friendly complaint reference (e.g., CMP-4821)."
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Customer name."
+        },
+        "customerPhone": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Optional customer phone number for follow-up."
+        },
+        "orderNumber": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Optional related order number."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["delivery_delay", "food_quality", "missing_item", "service", "other"],
+          "description": "Complaint category."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 600,
+          "description": "Complaint or feedback description."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "reviewed", "resolved"],
+          "description": "Complaint handling status."
+        },
+        "adminNote": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Internal management note."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "complaintNumber",
+        "customerName",
+        "customerPhone",
+        "orderNumber",
+        "category",
+        "message",
+        "status",
+        "adminNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authorized restaurant admin documents."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Full customer orders and PII invoices restricted to restaurant admins."
+    },
+    "/orderTracking/{orderId}": {
+      "schema": { "$ref": "#/entities/OrderTracking" },
+      "description": "Non-PII real-time status updates subscribed to by the ordering customer."
+    },
+    "/complaints/{complaintId}": {
+      "schema": { "$ref": "#/entities/Complaint" },
+      "description": "Customer complaints submitted from the Management & Complaints view, readable and manageable exclusively by restaurant admins."
+    }
+  }
+}

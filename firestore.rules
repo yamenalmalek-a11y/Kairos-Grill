@@ -1,0 +1,274 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 3 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (
+          request.auth.token.email == 'YamenAlmalek@gmail.com' &&
+          request.auth.token.email_verified == true
+        ) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['email', 'role', 'createdAt']) &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 120 &&
+        data.role == 'admin' &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidOrderStatus(status) {
+      return status in ['pending', 'accepted', 'preparing', 'delivering', 'completed', 'cancelled'];
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'orderNumber',
+          'customerName',
+          'customerPhone',
+          'orderMode',
+          'address',
+          'gpsText',
+          'paymentMethod',
+          'notes',
+          'items',
+          'subtotal',
+          'foodTax',
+          'drinksTax',
+          'deliveryFee',
+          'total',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'orderNumber',
+          'customerName',
+          'customerPhone',
+          'orderMode',
+          'address',
+          'gpsText',
+          'paymentMethod',
+          'notes',
+          'items',
+          'subtotal',
+          'foodTax',
+          'drinksTax',
+          'deliveryFee',
+          'total',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.orderNumber is string &&
+        data.orderNumber.size() >= 3 &&
+        data.orderNumber.size() <= 32 &&
+        data.customerName is string &&
+        data.customerName.size() >= 1 &&
+        data.customerName.size() <= 80 &&
+        data.customerPhone is string &&
+        data.customerPhone.size() >= 4 &&
+        data.customerPhone.size() <= 32 &&
+        data.orderMode in ['delivery', 'pickup'] &&
+        data.address is string &&
+        data.address.size() <= 240 &&
+        data.gpsText is string &&
+        data.gpsText.size() <= 64 &&
+        data.paymentMethod in ['cash', 'payment_link'] &&
+        data.notes is string &&
+        data.notes.size() <= 300 &&
+        data.items is list &&
+        data.items.size() >= 1 &&
+        data.items.size() <= 50 &&
+        data.items[0] is map &&
+        data.items[0].keys().hasAll(['dishId', 'nameAr', 'nameDe', 'qty', 'unitPrice', 'taxRate']) &&
+        data.items[0].keys().hasOnly(['dishId', 'itemNumber', 'nameAr', 'nameDe', 'variantLabel', 'qty', 'unitPrice', 'taxRate']) &&
+        data.subtotal is number && data.subtotal >= 0 &&
+        data.foodTax is number && data.foodTax >= 0 &&
+        data.drinksTax is number && data.drinksTax >= 0 &&
+        data.deliveryFee is number && data.deliveryFee >= 0 &&
+        data.total is number && data.total >= 0 &&
+        isValidOrderStatus(data.status) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidOrderTracking(data) {
+      return data.keys().hasAll([
+          'orderNumber',
+          'status',
+          'statusMessageAr',
+          'statusMessageDe',
+          'total',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'orderNumber',
+          'status',
+          'statusMessageAr',
+          'statusMessageDe',
+          'total',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.orderNumber is string &&
+        data.orderNumber.size() >= 3 &&
+        data.orderNumber.size() <= 32 &&
+        isValidOrderStatus(data.status) &&
+        data.statusMessageAr is string &&
+        data.statusMessageAr.size() <= 200 &&
+        data.statusMessageDe is string &&
+        data.statusMessageDe.size() <= 200 &&
+        data.total is number && data.total >= 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidComplaint(data) {
+      return data.keys().hasAll([
+          'complaintNumber',
+          'customerName',
+          'customerPhone',
+          'orderNumber',
+          'category',
+          'message',
+          'status',
+          'adminNote',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'complaintNumber',
+          'customerName',
+          'customerPhone',
+          'orderNumber',
+          'category',
+          'message',
+          'status',
+          'adminNote',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.complaintNumber is string &&
+        data.complaintNumber.size() >= 3 &&
+        data.complaintNumber.size() <= 32 &&
+        data.customerName is string &&
+        data.customerName.size() >= 1 &&
+        data.customerName.size() <= 80 &&
+        data.customerPhone is string &&
+        data.customerPhone.size() <= 32 &&
+        data.orderNumber is string &&
+        data.orderNumber.size() <= 32 &&
+        data.category in ['delivery_delay', 'food_quality', 'missing_item', 'service', 'other'] &&
+        data.message is string &&
+        data.message.size() >= 3 &&
+        data.message.size() <= 600 &&
+        data.status in ['new', 'reviewed', 'resolved'] &&
+        data.adminNote is string &&
+        data.adminNote.size() <= 300 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    match /admins/{uid} {
+      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create: if isAdmin() &&
+        isValidId(uid) &&
+        isValidAdminUser(incoming()) &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(uid);
+    }
+
+    match /orders/{orderId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(orderId) &&
+        orderId.size() >= 20 &&
+        isValidOrder(incoming()) &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/orderTracking/$(orderId));
+      allow update: if isAdmin() &&
+        isValidId(orderId) &&
+        isValidOrder(incoming()) &&
+        incoming().orderNumber == existing().orderNumber &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+
+    match /orderTracking/{orderId} {
+      allow get: if isAdmin() || (isValidId(orderId) && orderId.size() >= 20);
+      allow list: if isAdmin();
+      allow create: if isValidId(orderId) &&
+        orderId.size() >= 20 &&
+        isValidOrderTracking(incoming()) &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/orders/$(orderId));
+      allow update: if isAdmin() &&
+        isValidId(orderId) &&
+        isValidOrderTracking(incoming()) &&
+        incoming().orderNumber == existing().orderNumber &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'status',
+          'statusMessageAr',
+          'statusMessageDe',
+          'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+
+    match /complaints/{complaintId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(complaintId) &&
+        complaintId.size() >= 20 &&
+        isValidComplaint(incoming()) &&
+        incoming().status == 'new' &&
+        incoming().adminNote == '' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() &&
+        isValidId(complaintId) &&
+        isValidComplaint(incoming()) &&
+        incoming().complaintNumber == existing().complaintNumber &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(complaintId);
+    }
+  }
+}
