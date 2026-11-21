@@ -74,9 +74,6 @@ async function testConnection() {
 
 void testConnection();
 
-export const AUTHORIZED_ADMIN_FALLBACK_URL =
-  'https://ais-pre-shjmkjfm3cngp7ki3mavr7-447650977309.europe-west2.run.app/?admin=1';
-
 export function isNativeAuthHost(): boolean {
   if (typeof window === 'undefined') return true;
   const host = window.location.hostname.toLowerCase();
@@ -107,8 +104,8 @@ export function formatFirebaseAuthError(error: unknown, lang: 'ar' | 'de'): stri
 
   if (isUnauthorizedDomainError(error)) {
     return lang === 'ar'
-      ? 'تسجيل الدخول بحساب Google محصور بالنطاق الرسمي للتطبيق لأسباب أمنية. اضغط على الزر أدناه للدخول وتنزيل تطبيق الإدارة مباشرة.'
-      : 'Die Google-Anmeldung ist aus Sicherheitsgründen auf die offizielle App-Domain beschränkt. Nutzen Sie den Button unten für Login & App-Download.';
+      ? 'تسجيل دخول Google محصور بالنطاق المنشور من المنصة (زر «انشر») ولا يدعم النطاقات الخارجية.'
+      : 'Die Google-Anmeldung funktioniert nur über die veröffentlichte Plattform-Domain, nicht über externe Domains.';
   }
 
   if (code === 'auth/popup-blocked' || msg.includes('auth/popup-blocked')) {

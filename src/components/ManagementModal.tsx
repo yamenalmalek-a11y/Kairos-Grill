@@ -3,7 +3,6 @@ import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/aut
 import {
   CheckCircle2,
   Download,
-  ExternalLink,
   Lock,
   LogOut,
   MessageSquareWarning,
@@ -14,12 +13,10 @@ import {
 } from 'lucide-react';
 import {
   ADMIN_EMAIL,
-  AUTHORIZED_ADMIN_FALLBACK_URL,
   auth,
   formatFirebaseAuthError,
   googleProvider,
   isNativeAuthHost,
-  isUnauthorizedDomainError,
 } from '@/src/firebase';
 import { ComplaintCategory, createComplaint } from '@/src/services/kairosFirebase';
 import { PWAInstallButton } from '@/src/components/PWAInstallButton';
@@ -57,7 +54,6 @@ export function ManagementModal({
   const [showAdminDownloadGate, setShowAdminDownloadGate] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isDomainError, setIsDomainError] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
 
   useEffect(() => {
@@ -113,12 +109,10 @@ export function ManagementModal({
 
   const handleGoogleSignIn = async () => {
     setAuthError(null);
-    setIsDomainError(false);
     setSigningIn(true);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setIsDomainError(isUnauthorizedDomainError(err));
       setAuthError(formatFirebaseAuthError(err, lang));
     } finally {
       setSigningIn(false);
@@ -135,7 +129,6 @@ export function ManagementModal({
   const handleSignOut = async () => {
     await signOut(auth);
     setAuthError(null);
-    setIsDomainError(false);
   };
 
   return (
@@ -355,25 +348,17 @@ export function ManagementModal({
 
                 {!user ? (
                   !isNativeAuthHost() ? (
-                    <div className="space-y-2.5">
-                      <p className="text-[12px] text-[#5A6568] leading-relaxed">
+                    <div className="p-3 rounded-[10px] bg-amber-50 border border-amber-200 space-y-1.5 text-start">
+                      <p className="text-[12px] font-bold text-[#242E30]">
                         {lang === 'ar'
-                          ? 'لتسجيل الدخول بحساب الإدارة وتنزيل التطبيق بأمان، يتم التحقق عبر البوابة الرسمية المعتمدة (مربوطة فوراً بنفس قاعدة بيانات الطلبات والشكاوي).'
-                          : 'Für den geschützten Admin-Login und App-Download nutzen Sie bitte das autorisierte Verwaltungs-Portal (direkt mit derselben Bestell-Datenbank verbunden).'}
+                          ? 'تسجيل دخول الإدارة غير متاح على النطاقات الخارجية'
+                          : 'Admin-Login auf externen Domains nicht verfügbar'}
                       </p>
-                      <a
-                        href={AUTHORIZED_ADMIN_FALLBACK_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full h-10 px-4 rounded-[10px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[12px] font-bold inline-flex items-center justify-center gap-2 transition-colors"
-                      >
-                        <span>
-                          {lang === 'ar'
-                            ? 'تسجيل الدخول وتنزيل تطبيق الإدارة'
-                            : 'Admin-Login & App-Download öffnen'}
-                        </span>
-                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                      </a>
+                      <p className="text-[11px] text-[#5A6568] leading-relaxed">
+                        {lang === 'ar'
+                          ? 'يرتبط تسجيل دخول Google تلقائياً بالنطاق المنشور عبر زر «انشر» داخل المنصة. لاستخدام لوحة الإدارة وتنزيل تطبيق الإدارة بدون أي أخطاء، افتح التطبيق المنشور عبر المنصة.'
+                          : 'Die Google-Anmeldung ist an die direkt über die Plattform veröffentlichte Domain gebunden.'}
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-2.5">
@@ -397,26 +382,7 @@ export function ManagementModal({
                             : 'Mit Google Admin-Konto anmelden'}
                       </button>
                       {authError && (
-                        <div className="p-3 rounded-[10px] bg-red-50 border border-red-200 space-y-2 text-start">
-                          <p className="text-[11px] font-semibold text-red-700 leading-relaxed">
-                            {authError}
-                          </p>
-                          {isDomainError && (
-                            <a
-                              href={AUTHORIZED_ADMIN_FALLBACK_URL}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="h-9 px-3 rounded-[8px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5 w-full"
-                            >
-                              <span>
-                                {lang === 'ar'
-                                  ? 'الدخول وتنزيل تطبيق الإدارة من البوابة المعتمدة'
-                                  : 'Über autorisiertes Portal anmelden'}
-                              </span>
-                              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                            </a>
-                          )}
-                        </div>
+                        <p className="text-[11px] font-semibold text-red-600">{authError}</p>
                       )}
                     </div>
                   )

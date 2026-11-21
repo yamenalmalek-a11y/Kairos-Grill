@@ -86,6 +86,8 @@ export const KAIROS_ASSETS = {
   buffetInterior: '/assets/aistudio/Screenshot_________-_______3377619f.png',
   promoVideo:
     '/assets/aistudio/______________-_2.6K_views___29_reactions______________________________________________________________________________65f2d9c3.mp4',
+  introVideo:
+    '/assets/aistudio/bayan-custom_1794929681370-vertical-9x16__1__2d7e44d2.mp4',
 };
 
 export const MENU_CATEGORIES: Array<{

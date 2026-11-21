@@ -17,12 +17,10 @@ import {
 } from 'lucide-react';
 import {
   ADMIN_EMAIL,
-  AUTHORIZED_ADMIN_FALLBACK_URL,
   auth,
   formatFirebaseAuthError,
   googleProvider,
   isNativeAuthHost,
-  isUnauthorizedDomainError,
 } from '@/src/firebase';
 import { KAIROS_ASSETS, formatEuro } from '@/src/data/kairosData';
 import {
@@ -133,7 +131,6 @@ export function AdminDashboard({
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isDomainError, setIsDomainError] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'orders' | 'complaints'>('orders');
   const [orderFilter, setOrderFilter] = useState<'all' | OrderStatus>('all');
@@ -190,11 +187,9 @@ export function AdminDashboard({
 
   const handleSignIn = async () => {
     setAuthError(null);
-    setIsDomainError(false);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setIsDomainError(isUnauthorizedDomainError(err));
       setAuthError(formatFirebaseAuthError(err, lang));
     }
   };
@@ -202,7 +197,6 @@ export function AdminDashboard({
   const handleSignOut = async () => {
     await signOut(auth);
     setAuthError(null);
-    setIsDomainError(false);
     initialOrdersLoadedRef.current = false;
     seenOrderIdsRef.current.clear();
   };
@@ -306,19 +300,18 @@ export function AdminDashboard({
                 </button>
               </div>
             ) : !isNativeAuthHost() ? (
-              <a
-                href={AUTHORIZED_ADMIN_FALLBACK_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-12 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white font-display font-bold text-[14px] shadow-[0_8px_20px_rgba(255,128,0,0.28)] transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <span>
+              <div className="p-4 rounded-[12px] bg-amber-50 border border-amber-200 text-start space-y-1.5">
+                <p className="text-[13px] font-bold text-[#242E30]">
                   {lang === 'ar'
-                    ? 'تسجيل الدخول وتنزيل تطبيق الإدارة'
-                    : 'Zum autorisierten Admin-Login'}
-                </span>
-                <ExternalLink className="w-4 h-4 shrink-0" />
-              </a>
+                    ? 'تسجيل دخول الإدارة غير متاح على النطاقات الخارجية'
+                    : 'Admin-Login auf externen Domains nicht verfügbar'}
+                </p>
+                <p className="text-[12px] text-[#5A6568] leading-relaxed">
+                  {lang === 'ar'
+                    ? 'يرتبط تسجيل دخول Google تلقائياً بالنطاق المنشور عبر زر «انشر» داخل المنصة فقط.'
+                    : 'Die Google-Anmeldung ist an die direkt über die Plattform veröffentlichte Domain gebunden.'}
+                </p>
+              </div>
             ) : (
               <button
                 type="button"
@@ -330,26 +323,7 @@ export function AdminDashboard({
             )}
 
             {authError && (
-              <div className="p-3.5 rounded-[12px] bg-red-50 border border-red-200 space-y-2.5 text-start">
-                <p className="text-[12px] font-semibold text-red-700 leading-relaxed">
-                  {authError}
-                </p>
-                {isDomainError && (
-                  <a
-                    href={AUTHORIZED_ADMIN_FALLBACK_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-10 px-4 rounded-[10px] bg-[#242E30] hover:bg-[#354245] text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5 w-full"
-                  >
-                    <span>
-                      {lang === 'ar'
-                        ? 'فتح وتنزيل تطبيق الإدارة من البوابة المعتمدة'
-                        : 'Über autorisiertes Admin-Portal öffnen'}
-                    </span>
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                  </a>
-                )}
-              </div>
+              <p className="text-[12px] font-semibold text-red-600">{authError}</p>
             )}
           </div>
         </main>

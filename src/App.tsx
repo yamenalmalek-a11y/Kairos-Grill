@@ -30,10 +30,8 @@ import { CroppedPhoto } from '@/src/components/CroppedPhoto';
 import { CartDrawer } from '@/src/components/CartDrawer';
 import { OfflineIndicator } from '@/src/components/OfflineIndicator';
 import { VideoShowcase } from '@/src/components/VideoShowcase';
-import { CustomerOrderTracker } from '@/src/components/CustomerOrderTracker';
-import { AdminDashboard } from '@/src/components/AdminDashboard';
-import { ManagementModal } from '@/src/components/ManagementModal';
-import { usePWAInstall } from '@/src/hooks/usePWAInstall';
+import { PWAInstallButton } from '@/src/components/PWAInstallButton';
+import { IntroVideoModal } from '@/src/components/IntroVideoModal';
 
 function makeCartKey(dishId: string, variant?: DishVariant): string {
   return variant ? `${dishId}__${variant.id}` : dishId;
@@ -133,62 +131,19 @@ function MenuCardAction({
   );
 }
 
-const ACTIVE_ORDER_STORAGE_KEY = 'kairos_active_order_id';
-
-function isAdminUrl(): boolean {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search);
-  return (
-    params.get('admin') === '1' ||
-    window.location.pathname.toLowerCase().startsWith('/admin')
-  );
-}
-
 export default function App() {
-  const [lang, setLang] = useState<'ar' | 'de'>('ar');
-  const [viewMode, setViewMode] = useState<'customer' | 'admin'>(() =>
-    isAdminUrl() ? 'admin' : 'customer'
-  );
-
-  // Customer Live Order Tracking state
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(ACTIVE_ORDER_STORAGE_KEY);
-  });
-
+  const [lang, setLang] = useState<'ar' | 'de'>('de');
   const [activeCategory, setActiveCategory] = useState<MenuCategoryId>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<CartEntry[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
-
-  // Capture & suppress automatic browser install prompts globally; UI only shown after Admin login
-  usePWAInstall();
+  const [showIntroVideo, setShowIntroVideo] = useState(true);
 
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }, [lang]);
-
-  // Sync URL navigation
-  useEffect(() => {
-    const onPopState = () => {
-      setViewMode(isAdminUrl() ? 'admin' : 'customer');
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-
-  const navigateToCustomer = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('admin');
-    if (url.pathname.toLowerCase().startsWith('/admin')) {
-      url.pathname = '/';
-    }
-    window.history.pushState({}, '', url.toString());
-    setViewMode('customer');
-  };
 
   const getSelectedVariant = (dish: KairosDish): DishVariant | undefined => {
     if (!dish.variants || dish.variants.length === 0) return undefined;
@@ -269,19 +224,6 @@ export default function App() {
       : `Hallo Kairos Grill Team, ich möchte gerne ein Catering / eine Partyplatte anfragen.`
   );
 
-  if (viewMode === 'admin') {
-    return (
-      <>
-        <AdminDashboard
-          lang={lang}
-          onChangeLang={setLang}
-          onExitAdmin={navigateToCustomer}
-        />
-        <OfflineIndicator lang={lang} />
-      </>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F5F2] text-[#242E30]">
       {/* 3-Zone Top Navigation Bar */}
@@ -335,13 +277,6 @@ export default function App() {
             >
               {lang === 'ar' ? 'التواصل' : 'Kontakt'}
             </a>
-            <button
-              type="button"
-              onClick={() => setIsManagementOpen(true)}
-              className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0 font-semibold"
-            >
-              {lang === 'ar' ? 'الإدارة' : 'Verwaltung'}
-            </button>
           </nav>
 
           {/* Zone 3: Single Primary Cart CTA */}
@@ -386,40 +321,30 @@ export default function App() {
                 </a>
               </div>
 
-              {/* Language Switcher & Management Access */}
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Language Switcher */}
+              <div className="flex items-center gap-1 p-1 bg-[#F8F5F2] rounded-[12px] border border-[#EAE5DF]">
                 <button
                   type="button"
-                  onClick={() => setIsManagementOpen(true)}
-                  className="md:hidden h-9 px-3 rounded-[10px] bg-[#F8F5F2] hover:bg-[#FFF3E6] border border-[#EAE5DF] text-[12px] font-bold text-[#242E30] transition-colors"
+                  onClick={() => setLang('de')}
+                  className={`px-3 py-1.5 rounded-[10px] text-[12px] font-bold transition-colors ${
+                    lang === 'de'
+                      ? 'bg-[#FF8000] text-white shadow-xs'
+                      : 'text-[#5A6568] hover:text-[#242E30]'
+                  }`}
                 >
-                  {lang === 'ar' ? 'الإدارة' : 'Verwaltung'}
+                  Deutsch
                 </button>
-
-                <div className="flex items-center gap-1 p-1 bg-[#F8F5F2] rounded-[12px] border border-[#EAE5DF]">
-                  <button
-                    type="button"
-                    onClick={() => setLang('ar')}
-                    className={`px-3 py-1.5 rounded-[10px] text-[12px] font-bold transition-colors ${
-                      lang === 'ar'
-                        ? 'bg-[#FF8000] text-white shadow-xs'
-                        : 'text-[#5A6568] hover:text-[#242E30]'
-                    }`}
-                  >
-                    العربية
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLang('de')}
-                    className={`px-3 py-1.5 rounded-[10px] text-[12px] font-bold transition-colors ${
-                      lang === 'de'
-                        ? 'bg-[#FF8000] text-white shadow-xs'
-                        : 'text-[#5A6568] hover:text-[#242E30]'
-                    }`}
-                  >
-                    Deutsch
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setLang('ar')}
+                  className={`px-3 py-1.5 rounded-[10px] text-[12px] font-bold transition-colors ${
+                    lang === 'ar'
+                      ? 'bg-[#FF8000] text-white shadow-xs'
+                      : 'text-[#5A6568] hover:text-[#242E30]'
+                  }`}
+                >
+                  العربية
+                </button>
               </div>
             </div>
 
@@ -456,7 +381,7 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* Primary Menu CTA (Customer Web-Only Experience — No App Download) */}
+                {/* Primary Menu CTA & App Download CTA */}
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   <a
                     href="#menu"
@@ -466,6 +391,7 @@ export default function App() {
                     <span>{lang === 'ar' ? 'تصفح القائمة واطلب الآن' : 'Jetzt bestellen'}</span>
                     <ArrowDown className="w-4 h-4" />
                   </a>
+                  <PWAInstallButton lang={lang} variant="primary" />
                 </div>
               </div>
 
@@ -500,18 +426,6 @@ export default function App() {
             </div>
           </div>
         </section>
-
-        {/* Live Order Status Notification Banner for Customer */}
-        {activeOrderId && (
-          <CustomerOrderTracker
-            orderId={activeOrderId}
-            lang={lang}
-            onDismiss={() => {
-              localStorage.removeItem(ACTIVE_ORDER_STORAGE_KEY);
-              setActiveOrderId(null);
-            }}
-          />
-        )}
 
         {/* Video Showcase Section */}
         <VideoShowcase
@@ -843,8 +757,8 @@ export default function App() {
               <div>
                 <h2 className="font-display text-[22px] sm:text-[26px] font-extrabold text-[#242E30]">
                   {lang === 'ar'
-                    ? 'ساعات العمل، التوصيل والتواصل'
-                    : 'Standort, Öffnungszeiten & Kontakt'}
+                    ? 'ساعات العمل، التوصيل وتثبيت التطبيق'
+                    : 'Standort, Öffnungszeiten & App'}
                 </h2>
                 <p className="text-[14px] text-[#5A6568] mt-1">
                   Lieferservice Kairos Grill · {KAIROS_INFO.address}
@@ -883,6 +797,7 @@ export default function App() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
+                <PWAInstallButton lang={lang} variant="secondary" />
                 <a
                   href={KAIROS_INFO.facebookUrl}
                   target="_blank"
@@ -928,14 +843,6 @@ export default function App() {
               <ExternalLink className="w-3 h-3" />
             </a>
             <span aria-hidden="true">·</span>
-            <button
-              type="button"
-              onClick={() => setIsManagementOpen(true)}
-              className="font-semibold text-[#242E30] hover:text-[#FF8000] transition-colors"
-            >
-              {lang === 'ar' ? 'الإدارة والشكاوي' : 'Verwaltung & Beschwerden'}
-            </button>
-            <span aria-hidden="true">·</span>
             <p className="tabular-nums">
               Telefon & WhatsApp: {KAIROS_INFO.phoneDisplay}
             </p>
@@ -970,17 +877,12 @@ export default function App() {
         onUpdateQty={handleUpdateQty}
         onClearCart={() => setCart([])}
         lang={lang}
-        onOrderCreated={(orderId) => {
-          localStorage.setItem(ACTIVE_ORDER_STORAGE_KEY, orderId);
-          setActiveOrderId(orderId);
-        }}
       />
 
-      <ManagementModal
-        isOpen={isManagementOpen}
-        onClose={() => setIsManagementOpen(false)}
+      <IntroVideoModal
+        isOpen={showIntroVideo}
+        onClose={() => setShowIntroVideo(false)}
         lang={lang}
-        onOpenAdminDashboard={() => setViewMode('admin')}
       />
 
       <OfflineIndicator lang={lang} />

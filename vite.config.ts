@@ -13,14 +13,14 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['kairos-logo.png', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
         manifest: {
-          id: '/?admin=1',
-          name: 'Kairos Grill Admin — لوحة الإدارة',
-          short_name: 'Kairos Admin',
-          description: 'تطبيق إدارة الطلبات الفورية والشكاوي لمطعم Kairos Grill.',
+          id: '/',
+          name: 'Kairos Grill — Lieferservice Rostock',
+          short_name: 'Kairos Grill',
+          description: 'مطعم وكافيه Kairos Grill في روستوك — اطلب مباشرة عبر واتساب مع الفاتورة التفصيلية.',
           theme_color: '#FF8000',
           background_color: '#F8F5F2',
           display: 'standalone',
-          start_url: '/?admin=1',
+          start_url: '/',
           scope: '/',
           icons: [
             {
