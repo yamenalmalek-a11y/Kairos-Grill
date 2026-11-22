@@ -21,7 +21,7 @@ export function CroppedPhoto({
   if (hasError || !src) {
     return (
       <div
-        className={`flex flex-col items-center justify-center bg-gradient-to-br from-[#FFF3E6] via-[#F8F5F2] to-[#EAE5DF] text-[#5A6568] ${className}`}
+        className={`flex flex-col items-center justify-center bg-gradient-to-br from-[#1C2024] via-[#14171A] to-[#0B0D0F] text-[#A3ACB3] border border-[#262B31] ${className}`}
         role="img"
         aria-label={alt}
       >
@@ -32,7 +32,7 @@ export function CroppedPhoto({
   }
 
   return (
-    <div className={`overflow-hidden bg-[#242E30]/5 ${className}`}>
+    <div className={`overflow-hidden bg-[#1C2024] ${className}`}>
       <img
         src={src}
         alt={alt}

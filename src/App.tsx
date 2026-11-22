@@ -76,8 +76,8 @@ function MenuCardAction({
                 onClick={() => onSelectVariant(variant)}
                 className={`px-2.5 py-1 rounded-[8px] text-[11px] font-bold transition-colors tabular-nums ${
                   isSelected
-                    ? 'bg-[#242E30] text-white'
-                    : 'bg-[#F8F5F2] text-[#242E30] border border-[#EAE5DF] hover:bg-[#FFF3E6]'
+                    ? 'bg-[#FF8000] text-white'
+                    : 'bg-[#1C2024] text-[#F4F5F6] border border-[#262B31] hover:border-[#FF8000]/50'
                 }`}
               >
                 {lang === 'ar' ? variant.labelAr : variant.labelDe} · {formatEuro(variant.price)}
@@ -87,12 +87,12 @@ function MenuCardAction({
         </div>
       )}
 
-      <div className="pt-2.5 border-t border-[#EAE5DF] flex items-center justify-between gap-3">
+      <div className="pt-2.5 border-t border-[#262B31] flex items-center justify-between gap-3">
         <div>
-          <span className="font-display text-[17px] sm:text-[18px] font-extrabold text-[#242E30] tabular-nums">
+          <span className="font-display text-[17px] sm:text-[18px] font-extrabold text-[#F4F5F6] tabular-nums">
             {formatEuro(activePrice)}
           </span>
-          <span className="text-[11px] text-[#5A6568] ms-1.5 tabular-nums">
+          <span className="text-[11px] text-[#A3ACB3] ms-1.5 tabular-nums">
             / {selectedVariant ? (lang === 'ar' ? selectedVariant.labelAr : selectedVariant.labelDe) : lang === 'ar' ? dish.unitAr : dish.unitDe} ·{' '}
             {dish.taxRate === 0.19 ? '19%' : '7%'}
           </span>
@@ -108,16 +108,16 @@ function MenuCardAction({
             <span>{lang === 'ar' ? 'أضف' : 'Bestellen'}</span>
           </button>
         ) : (
-          <div className="flex items-center gap-1.5 bg-[#FFF3E6] rounded-[12px] p-1 border border-[#FF8000]/30">
+          <div className="flex items-center gap-1.5 bg-[#FF8000]/15 rounded-[12px] p-1 border border-[#FF8000]/35">
             <button
               type="button"
               onClick={() => onUpdateQty(entryKey, -1)}
               aria-label="Decrease quantity"
-              className="w-8 h-8 rounded-[10px] bg-white text-[#242E30] hover:text-[#FF8000] flex items-center justify-center shadow-xs"
+              className="w-8 h-8 rounded-[10px] bg-[#1C2024] text-[#F4F5F6] hover:text-[#FF8000] flex items-center justify-center"
             >
               <Minus className="w-3.5 h-3.5" />
             </button>
-            <span className="w-6 text-center text-[13px] font-extrabold text-[#242E30] tabular-nums">
+            <span className="w-6 text-center text-[13px] font-extrabold text-[#F4F5F6] tabular-nums">
               {qty}
             </span>
             <button
@@ -270,25 +270,25 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F5F2] text-[#242E30]">
+    <div className="min-h-screen flex flex-col bg-[#0B0D0F] text-[#F4F5F6]">
       {/* 3-Zone Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#EAE5DF]">
+      <header className="sticky top-0 z-40 bg-[#14171A]/95 backdrop-blur-md border-b border-[#262B31]">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6 sm:gap-8">
           {/* Zone 1: Brand */}
           <a
             href="#top"
-            className="flex items-center whitespace-nowrap shrink-0"
+            className="flex items-center whitespace-nowrap shrink-0 bg-white rounded-[10px] px-2.5 py-1 shadow-xs"
             aria-label="Kairos Grill"
           >
             <img
               src={KAIROS_ASSETS.logoBanner}
               alt="Kairos Grill"
-              className="h-11 w-auto object-contain"
+              className="h-9 w-auto object-contain"
             />
           </a>
 
           {/* Zone 2: Clean Single-Line Nav Links */}
-          <nav className="hidden md:flex items-center gap-7 text-[14px] font-semibold text-[#5A6568]">
+          <nav className="hidden md:flex items-center gap-7 text-[14px] font-semibold text-[#A3ACB3]">
             <a
               href="#menu"
               onClick={() => setActiveCategory('all')}
@@ -358,19 +358,19 @@ export default function App() {
         )}
 
         {/* Section 1: Storefront Hero */}
-        <section className="bg-white border-b border-[#EAE5DF]">
+        <section className="bg-[#14171A] border-b border-[#262B31]">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
             {/* Sub-header Utility Strip */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-[#EAE5DF]/80">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[#5A6568]">
-                <span className="inline-flex items-center gap-1.5 font-medium text-[#242E30]">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-6 mb-6 border-b border-[#262B31]">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[#A3ACB3]">
+                <span className="inline-flex items-center gap-1.5 font-medium text-[#F4F5F6]">
                   <MapPin className="w-4 h-4 text-[#FF8000] shrink-0" />
                   {KAIROS_INFO.address}
                 </span>
                 <span aria-hidden="true">·</span>
                 <a
                   href={`tel:${KAIROS_INFO.phoneDisplay}`}
-                  className="inline-flex items-center gap-1.5 font-semibold text-[#242E30] hover:text-[#FF8000] tabular-nums"
+                  className="inline-flex items-center gap-1.5 font-semibold text-[#F4F5F6] hover:text-[#FF8000] tabular-nums"
                 >
                   <Phone className="w-3.5 h-3.5 text-[#FF8000] shrink-0" />
                   {KAIROS_INFO.phoneDisplay}
@@ -379,7 +379,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsManagementOpen(true)}
-                  className="inline-flex items-center gap-1.5 font-semibold text-[#242E30] hover:text-[#FF8000] transition-colors"
+                  className="inline-flex items-center gap-1.5 font-semibold text-[#F4F5F6] hover:text-[#FF8000] transition-colors"
                 >
                   <MessageSquareWarning className="w-3.5 h-3.5 text-[#FF8000] shrink-0" />
                   <span>{lang === 'ar' ? 'الإدارة والشكاوي' : 'Verwaltung & Beschwerden'}</span>
@@ -387,14 +387,14 @@ export default function App() {
               </div>
 
               {/* Language Switcher */}
-              <div className="flex items-center gap-1 p-1 bg-[#F8F5F2] rounded-[12px] border border-[#EAE5DF]">
+              <div className="flex items-center gap-1 p-1 bg-[#1C2024] rounded-[12px] border border-[#262B31]">
                 <button
                   type="button"
                   onClick={() => setLang('de')}
                   className={`px-3 py-1.5 rounded-[10px] text-[12px] font-bold transition-colors ${
                     lang === 'de'
                       ? 'bg-[#FF8000] text-white shadow-xs'
-                      : 'text-[#5A6568] hover:text-[#242E30]'
+                      : 'text-[#A3ACB3] hover:text-[#F4F5F6]'
                   }`}
                 >
                   Deutsch
@@ -405,7 +405,7 @@ export default function App() {
                   className={`px-3 py-1.5 rounded-[10px] text-[12px] font-bold transition-colors ${
                     lang === 'ar'
                       ? 'bg-[#FF8000] text-white shadow-xs'
-                      : 'text-[#5A6568] hover:text-[#242E30]'
+                      : 'text-[#A3ACB3] hover:text-[#F4F5F6]'
                   }`}
                 >
                   العربية
@@ -420,25 +420,25 @@ export default function App() {
                   {lang === 'ar' ? KAIROS_INFO.taglineAr : KAIROS_INFO.taglineDe}
                 </p>
 
-                <h1 className="font-display text-[30px] sm:text-[42px] font-extrabold text-[#242E30] leading-[1.18] tracking-tight [text-wrap:balance]">
+                <h1 className="font-display text-[30px] sm:text-[42px] font-extrabold text-[#F4F5F6] leading-[1.18] tracking-tight [text-wrap:balance]">
                   {lang === 'ar'
                     ? 'مطعم وكافيه كايروس غريل — اطلب وجبتك الطازجة مباشرة أو عبر واتساب'
                     : 'Kairos Grill Rostock — Orientalisch, frisch & 100% hausgemacht'}
                 </h1>
 
-                <p className="mt-4 text-[15px] text-[#5A6568] leading-relaxed max-w-xl">
+                <p className="mt-4 text-[15px] text-[#A3ACB3] leading-relaxed max-w-xl">
                   {lang === 'ar'
                     ? 'شيش طاووق مشوي على الأصول، مقبلات وكبة، مناقيش صاج، بيتزا بالفرن الحجري، برغر، باستا، شنيتزل وتورتات منزلية يومياً — يصل طلبك فوراً للمطعم مع خيار الإرسال عبر واتساب.'
                     : 'Zartes Shish Tawook, orientalische Mezze, Saj, Steinofen-Pizza, handmade Burger, Pasta, Schnitzel & hausgemachte Torten. Direkt bestellen – ans Restaurant-Tablet & per WhatsApp.'}
                 </p>
 
                 {/* Hours Summary */}
-                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-[#242E30] tabular-nums">
+                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-[#F4F5F6] tabular-nums">
                   <span className="inline-flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-[#FF8000] shrink-0" />
                     {lang === 'ar' ? KAIROS_INFO.hoursWeekdayAr : KAIROS_INFO.hoursWeekdayDe}
                   </span>
-                  <span aria-hidden="true" className="text-[#5A6568]">
+                  <span aria-hidden="true" className="text-[#A3ACB3]">
                     ·
                   </span>
                   <span>
@@ -458,7 +458,7 @@ export default function App() {
                   </a>
                   <a
                     href="#catering"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-white hover:bg-[#FFF3E6] text-[#242E30] border border-[#EAE5DF] font-display font-bold text-[14px] transition-colors whitespace-nowrap shrink-0"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] text-[#F4F5F6] border border-[#262B31] font-display font-bold text-[14px] transition-colors whitespace-nowrap shrink-0"
                   >
                     <span>{lang === 'ar' ? 'البوفيه والمناسبات' : 'Catering & Events'}</span>
                   </a>
@@ -467,14 +467,14 @@ export default function App() {
 
               {/* Hero Visual Showcase using Real Uploaded Photos */}
               <div className="lg:col-span-6 grid grid-cols-2 gap-3.5">
-                <div className="col-span-2 h-[200px] sm:h-[225px] rounded-[12px] overflow-hidden bg-white border border-[#EAE5DF] p-5 flex items-center justify-center shadow-[0_8px_24px_rgba(36,46,48,0.06)]">
+                <div className="col-span-2 h-[200px] sm:h-[225px] rounded-[12px] overflow-hidden bg-white border border-[#262B31] p-5 flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
                   <img
                     src={KAIROS_ASSETS.logoBanner}
                     alt="Kairos Grill Logo"
                     className="max-h-full max-w-full object-contain"
                   />
                 </div>
-                <div className="h-[155px] sm:h-[175px] rounded-[12px] overflow-hidden shadow-[0_6px_18px_rgba(36,46,48,0.08)]">
+                <div className="h-[155px] sm:h-[175px] rounded-[12px] overflow-hidden border border-[#262B31] shadow-[0_6px_18px_rgba(0,0,0,0.4)]">
                   <CroppedPhoto
                     src="/assets/aistudio/Screenshot_________-_______13d642de.png"
                     alt="Shish Tawook Kairos Grill"
@@ -483,7 +483,7 @@ export default function App() {
                     className="w-full h-full"
                   />
                 </div>
-                <div className="h-[155px] sm:h-[175px] rounded-[12px] overflow-hidden shadow-[0_6px_18px_rgba(36,46,48,0.08)]">
+                <div className="h-[155px] sm:h-[175px] rounded-[12px] overflow-hidden border border-[#262B31] shadow-[0_6px_18px_rgba(0,0,0,0.4)]">
                   <CroppedPhoto
                     src="/assets/aistudio/Screenshot_________-_______562cdf9c.png"
                     alt="Schoko-Kirsch-Torte 4,00 €"
@@ -510,10 +510,10 @@ export default function App() {
         <section id="menu" className="max-w-[1280px] mx-auto px-4 sm:px-6 py-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="font-display text-[24px] sm:text-[28px] font-extrabold text-[#242E30]">
+              <h2 className="font-display text-[24px] sm:text-[28px] font-extrabold text-[#F4F5F6]">
                 {lang === 'ar' ? 'قائمة الطعام الكاملة (01–82) والمشروبات' : 'Unsere komplette Speisekarte'}
               </h2>
-              <p className="text-[14px] text-[#5A6568] mt-1">
+              <p className="text-[14px] text-[#A3ACB3] mt-1">
                 {lang === 'ar'
                   ? 'الأسعار باليورو (€) · يُضاف ٧٪ ضريبة للطعام و١٩٪ للمشروبات'
                   : 'Alle Preise netto in Euro (€) zzgl. 7% MwSt. (Speisen) & 19% MwSt. (Getränke)'}
@@ -522,7 +522,7 @@ export default function App() {
 
             {/* Search Input */}
             <div className="relative w-full md:w-80">
-              <Search className="w-4 h-4 text-[#5A6568] absolute top-3.5 left-3.5 pointer-events-none" />
+              <Search className="w-4 h-4 text-[#A3ACB3] absolute top-3.5 left-3.5 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
@@ -531,14 +531,14 @@ export default function App() {
                   lang === 'ar' ? 'ابحث برقم الصنف أو الاسم (مثال: 24، شيش، بيتزا)...' : 'Suche nach Nr. oder Gericht (z. B. 27, Shish)...'
                 }
                 aria-label="Search menu"
-                className="w-full h-11 pl-10 pr-9 rounded-[12px] bg-white border border-[#EAE5DF] focus:border-[#FF8000] focus:outline-none text-[13px] shadow-xs"
+                className="w-full h-11 pl-10 pr-9 rounded-[12px] bg-[#14171A] border border-[#262B31] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:border-[#FF8000] focus:outline-none text-[13px]"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
                   aria-label="Clear search"
-                  className="absolute top-3 right-3 text-[#5A6568] hover:text-[#242E30]"
+                  className="absolute top-3 right-3 text-[#A3ACB3] hover:text-[#F4F5F6]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -558,7 +558,7 @@ export default function App() {
                   className={`min-h-[42px] px-4 rounded-[12px] text-[13px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     isActive
                       ? 'bg-[#FF8000] text-white shadow-[0_4px_14px_rgba(255,128,0,0.28)]'
-                      : 'bg-white text-[#242E30] border border-[#EAE5DF] hover:bg-[#FFF3E6]'
+                      : 'bg-[#14171A] text-[#F4F5F6] border border-[#262B31] hover:bg-[#1C2024]'
                   }`}
                 >
                   {lang === 'ar' ? cat.labelAr : cat.labelDe}
@@ -568,8 +568,8 @@ export default function App() {
           </div>
 
           {filteredMenu.length === 0 ? (
-            <div className="bg-white rounded-[12px] p-10 text-center border border-[#EAE5DF]">
-              <p className="font-display text-[16px] font-bold text-[#242E30]">
+            <div className="bg-[#14171A] rounded-[12px] p-10 text-center border border-[#262B31]">
+              <p className="font-display text-[16px] font-bold text-[#F4F5F6]">
                 {lang === 'ar' ? 'لم يتم العثور على أصناف مطابقة' : 'Keine Gerichte gefunden'}
               </p>
               <button
@@ -585,12 +585,12 @@ export default function App() {
             </div>
           ) : (
             <div className="space-y-12">
-              {/* Photo Highlights Grid (Drinks with new photos, Torten, Grill & Bakery photos) */}
+              {/* Photo Highlights Grid */}
               {photoCardDishes.length > 0 && (
                 <div>
                   {activeCategory === 'all' && !searchQuery.trim() && (
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-display text-[19px] font-extrabold text-[#242E30]">
+                      <h3 className="font-display text-[19px] font-extrabold text-[#F4F5F6]">
                         {lang === 'ar'
                           ? 'أبرز الأطباق، المشروبات والتورتات بالصور'
                           : 'Spezialitäten, Torten & Getränke'}
@@ -605,7 +605,7 @@ export default function App() {
                       return (
                         <article
                           key={`photo-${dish.id}`}
-                          className="bg-white rounded-[12px] overflow-hidden shadow-[0_2px_12px_rgba(36,46,48,0.06)] hover:shadow-[0_10px_28px_rgba(36,46,48,0.1)] transition-all duration-200 flex flex-col border border-[#EAE5DF]/70"
+                          className="bg-[#14171A] rounded-[12px] overflow-hidden shadow-[0_6px_20px_rgba(0,0,0,0.35)] hover:border-[#FF8000]/45 transition-all duration-200 flex flex-col border border-[#262B31]"
                         >
                           <div className="aspect-[4/3] w-full overflow-hidden">
                             <CroppedPhoto
@@ -624,15 +624,15 @@ export default function App() {
                               </p>
                             )}
 
-                            <h3 className="font-display text-[16px] font-bold text-[#242E30] leading-snug">
+                            <h3 className="font-display text-[16px] font-bold text-[#F4F5F6] leading-snug">
                               {dish.itemNumber ? `${dish.itemNumber}. ` : ''}
                               {lang === 'ar' ? dish.nameAr : dish.nameDe}
                             </h3>
-                            <p className="text-[12px] text-[#5A6568] mt-0.5">
+                            <p className="text-[12px] text-[#A3ACB3] mt-0.5">
                               {lang === 'ar' ? dish.nameDe : dish.unitDe}
                             </p>
 
-                            <p className="mt-2 mb-3 text-[13px] text-[#5A6568] leading-relaxed flex-1">
+                            <p className="mt-2 mb-3 text-[13px] text-[#A3ACB3] leading-relaxed flex-1">
                               {lang === 'ar' ? dish.descAr : dish.descDe}
                             </p>
 
@@ -653,13 +653,13 @@ export default function App() {
                 </div>
               )}
 
-              {/* Grouped Full Numbered Menu Catalog (items without duplicate photo-only category) */}
+              {/* Grouped Full Numbered Menu Catalog */}
               {groupedCategories
                 .filter(({ items }) => items.some((item) => !item.featuredPhotoCard))
                 .map(({ cat, items }) => (
                   <div key={cat.id} className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 pb-2 border-b border-[#EAE5DF]">
-                      <h3 className="font-display text-[20px] font-extrabold text-[#242E30]">
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 pb-2 border-b border-[#262B31]">
+                      <h3 className="font-display text-[20px] font-extrabold text-[#F4F5F6]">
                         {lang === 'ar' ? cat.labelAr : cat.labelDe}
                       </h3>
                       {(cat.noteAr || cat.noteDe) && (
@@ -676,7 +676,7 @@ export default function App() {
                         return (
                           <article
                             key={dish.id}
-                            className="bg-white rounded-[12px] p-4 border border-[#EAE5DF]/85 shadow-[0_2px_10px_rgba(36,46,48,0.04)] hover:shadow-[0_8px_22px_rgba(36,46,48,0.08)] transition-shadow flex flex-col justify-between gap-3"
+                            className="bg-[#14171A] rounded-[12px] p-4 border border-[#262B31] hover:border-[#FF8000]/45 transition-colors flex flex-col justify-between gap-3"
                           >
                             <div className="flex items-start gap-3.5">
                               {dish.image && (
@@ -689,7 +689,7 @@ export default function App() {
                                 />
                               )}
                               <div className="min-w-0 flex-1">
-                                <h4 className="font-display text-[15px] font-bold text-[#242E30] leading-snug">
+                                <h4 className="font-display text-[15px] font-bold text-[#F4F5F6] leading-snug">
                                   {dish.itemNumber && (
                                     <span className="text-[#FF8000] tabular-nums me-1.5">
                                       {dish.itemNumber}.
@@ -697,14 +697,14 @@ export default function App() {
                                   )}
                                   {lang === 'ar' ? dish.nameAr : dish.nameDe}
                                 </h4>
-                                <p className="text-[12px] font-medium text-[#5A6568] mt-0.5">
+                                <p className="text-[12px] font-medium text-[#A3ACB3] mt-0.5">
                                   {lang === 'ar' ? dish.nameDe : dish.nameAr}
                                 </p>
-                                <p className="mt-1.5 text-[13px] text-[#5A6568] leading-relaxed">
+                                <p className="mt-1.5 text-[13px] text-[#A3ACB3] leading-relaxed">
                                   {lang === 'ar' ? dish.descAr : dish.descDe}
                                 </p>
                                 {dish.allergens && (
-                                  <p className="mt-1 text-[11px] text-[#5A6568]/80">
+                                  <p className="mt-1 text-[11px] text-[#A3ACB3]/80">
                                     Allergene: {dish.allergens}
                                   </p>
                                 )}
@@ -731,7 +731,7 @@ export default function App() {
         </section>
 
         {/* Section 3: Catering & Events */}
-        <section id="catering" className="bg-white border-y border-[#EAE5DF] py-12">
+        <section id="catering" className="bg-[#14171A] border-y border-[#262B31] py-12">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-6 space-y-4">
               <p className="text-[13px] font-bold text-[#FF8000]">
@@ -739,12 +739,12 @@ export default function App() {
                   ? 'أعياد ميلاد · حفلات زفاف · اجتماعات عائلية'
                   : 'Geburtstag · Hochzeit · Familienfeier'}
               </p>
-              <h2 className="font-display text-[26px] sm:text-[32px] font-extrabold text-[#242E30] leading-tight [text-wrap:balance]">
+              <h2 className="font-display text-[26px] sm:text-[32px] font-extrabold text-[#F4F5F6] leading-tight [text-wrap:balance]">
                 {lang === 'ar'
                   ? 'خدمة البوفيه والضيافة الفاخرة لمناسباتكم الخاصة'
                   : 'Kairos Grill Catering — Frisch, hausgemacht & mit Liebe für Ihre Feier'}
               </h2>
-              <p className="text-[14px] text-[#5A6568] leading-relaxed">
+              <p className="text-[14px] text-[#A3ACB3] leading-relaxed">
                 {lang === 'ar'
                   ? 'نجهز لكم صواني الكبة المنزلية، سلطة التبولة الطازجة، البيدا، المناقيش المشكلة، المشاوي والحلويات حسب عدد ضيوفكم في روستوك وما حولها.'
                   : 'Kommen Sie vorbei oder bestellen Sie für Ihre nächste Feier: Hausgemachte Kibbeh, frischer Taboulé-Salat, leckere Pide, Grillspieße und Desserts individuell zusammengestellt.'}
@@ -768,16 +768,16 @@ export default function App() {
                   href={directCateringWhatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="h-11 px-5 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] text-[13px] font-bold inline-flex items-center gap-2 transition-colors"
+                  className="h-11 px-5 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[#F4F5F6] text-[13px] font-bold inline-flex items-center gap-2 transition-colors"
                 >
-                  <MessageCircle className="w-4 h-4 text-[#16A34A]" />
+                  <MessageCircle className="w-4 h-4 text-[#4ADE80]" />
                   <span>{lang === 'ar' ? 'استفسار مباشر عبر واتساب' : 'Catering per WhatsApp anfragen'}</span>
                 </a>
               </div>
             </div>
 
             <div className="lg:col-span-6 grid grid-cols-2 gap-3.5">
-              <div className="col-span-2 aspect-[16/9] rounded-[12px] overflow-hidden shadow-md">
+              <div className="col-span-2 aspect-[16/9] rounded-[12px] overflow-hidden border border-[#262B31] shadow-md">
                 <CroppedPhoto
                   src={KAIROS_ASSETS.cateringHero}
                   alt="Kairos Grill Catering Collage"
@@ -786,7 +786,7 @@ export default function App() {
                   className="w-full h-full"
                 />
               </div>
-              <div className="aspect-[4/3] rounded-[12px] overflow-hidden shadow-sm">
+              <div className="aspect-[4/3] rounded-[12px] overflow-hidden border border-[#262B31] shadow-sm">
                 <CroppedPhoto
                   src={KAIROS_ASSETS.buffetInterior}
                   alt="Kairos Grill Buffet"
@@ -795,7 +795,7 @@ export default function App() {
                   className="w-full h-full"
                 />
               </div>
-              <div className="aspect-[4/3] rounded-[12px] overflow-hidden shadow-sm">
+              <div className="aspect-[4/3] rounded-[12px] overflow-hidden border border-[#262B31] shadow-sm">
                 <CroppedPhoto
                   src={KAIROS_ASSETS.collageGrill}
                   alt="Kairos Grill Spezialitäten"
@@ -810,9 +810,9 @@ export default function App() {
 
         {/* Section 4: Contact & Hours */}
         <section id="contact" className="max-w-[1280px] mx-auto px-4 sm:px-6 py-12">
-          <div className="bg-white rounded-[16px] p-6 sm:p-8 border border-[#EAE5DF] shadow-[0_4px_20px_rgba(36,46,48,0.05)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="bg-[#14171A] rounded-[16px] p-6 sm:p-8 border border-[#262B31] shadow-[0_8px_28px_rgba(0,0,0,0.4)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5">
-              <div className="aspect-[16/9] rounded-[12px] overflow-hidden border border-[#EAE5DF]">
+              <div className="aspect-[16/9] rounded-[12px] overflow-hidden border border-[#262B31]">
                 <CroppedPhoto
                   src={KAIROS_ASSETS.contactCard}
                   alt="Kairos Grill Kontakt & Öffnungszeiten"
@@ -825,31 +825,31 @@ export default function App() {
 
             <div className="lg:col-span-7 space-y-5">
               <div>
-                <h2 className="font-display text-[22px] sm:text-[26px] font-extrabold text-[#242E30]">
+                <h2 className="font-display text-[22px] sm:text-[26px] font-extrabold text-[#F4F5F6]">
                   {lang === 'ar'
                     ? 'ساعات العمل، الموقع والتوصيل'
                     : 'Standort, Öffnungszeiten & Kontakt'}
                 </h2>
-                <p className="text-[14px] text-[#5A6568] mt-1">
+                <p className="text-[14px] text-[#A3ACB3] mt-1">
                   Lieferservice Kairos Grill · {KAIROS_INFO.address}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[13px]">
-                <div className="p-4 rounded-[12px] bg-[#F8F5F2]">
-                  <p className="font-bold text-[#242E30] mb-1">
+                <div className="p-4 rounded-[12px] bg-[#1C2024] border border-[#262B31]">
+                  <p className="font-bold text-[#F4F5F6] mb-1">
                     {lang === 'ar' ? 'أوقات الدوام' : 'Öffnungszeiten'}
                   </p>
-                  <p className="text-[#5A6568] tabular-nums">
+                  <p className="text-[#A3ACB3] tabular-nums">
                     {lang === 'ar' ? KAIROS_INFO.hoursWeekdayAr : KAIROS_INFO.hoursWeekdayDe}
                   </p>
-                  <p className="text-[#5A6568] tabular-nums mt-0.5">
+                  <p className="text-[#A3ACB3] tabular-nums mt-0.5">
                     {lang === 'ar' ? KAIROS_INFO.hoursWeekendAr : KAIROS_INFO.hoursWeekendDe}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-[12px] bg-[#F8F5F2]">
-                  <p className="font-bold text-[#242E30] mb-1">
+                <div className="p-4 rounded-[12px] bg-[#1C2024] border border-[#262B31]">
+                  <p className="font-bold text-[#F4F5F6] mb-1">
                     {lang === 'ar' ? 'الهاتف والواتساب المباشر' : 'Telefon & WhatsApp'}
                   </p>
                   <a
@@ -858,7 +858,7 @@ export default function App() {
                   >
                     {KAIROS_INFO.phoneDisplay}
                   </a>
-                  <p className="text-[12px] text-[#5A6568] mt-0.5">
+                  <p className="text-[12px] text-[#A3ACB3] mt-0.5">
                     {lang === 'ar'
                       ? 'تصل الطلبات لتابلت المطعم وعبر واتساب على هذا الرقم'
                       : 'Bestellungen gehen ans Tablet & per WhatsApp ein'}
@@ -870,7 +870,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsManagementOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] border border-[#EAE5DF] font-display font-bold text-[13px] transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] text-[#F4F5F6] border border-[#262B31] font-display font-bold text-[13px] transition-colors whitespace-nowrap shrink-0"
                 >
                   <MessageSquareWarning className="w-4 h-4 text-[#FF8000]" />
                   <span>
@@ -881,7 +881,7 @@ export default function App() {
                   href={KAIROS_INFO.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-[#F0F6FF] hover:bg-[#E1EEFF] text-[#1877F2] border border-[#1877F2]/20 font-display font-bold text-[13px] transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-[#1877F2]/15 hover:bg-[#1877F2]/25 text-[#60A5FA] border border-[#1877F2]/35 font-display font-bold text-[13px] transition-colors whitespace-nowrap shrink-0"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -904,8 +904,8 @@ export default function App() {
       </main>
 
       {/* Clean Minimal Footer */}
-      <footer className="bg-white border-t border-[#EAE5DF] py-6 pb-20 md:pb-6">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#5A6568]">
+      <footer className="bg-[#14171A] border-t border-[#262B31] py-6 pb-20 md:pb-6">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[#A3ACB3]">
           <p>
             © {new Date().getFullYear()} Kairos Grill · {KAIROS_INFO.address}
           </p>
@@ -913,7 +913,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsManagementOpen(true)}
-              className="inline-flex items-center gap-1.5 font-semibold text-[#242E30] hover:text-[#FF8000] transition-colors"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#F4F5F6] hover:text-[#FF8000] transition-colors"
             >
               <MessageSquareWarning className="w-3.5 h-3.5 text-[#FF8000]" />
               <span>
@@ -924,7 +924,7 @@ export default function App() {
             <button
               type="button"
               onClick={openAdminTablet}
-              className="inline-flex items-center gap-1.5 font-semibold text-[#242E30] hover:text-[#FF8000] transition-colors"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#F4F5F6] hover:text-[#FF8000] transition-colors"
             >
               <Tablet className="w-3.5 h-3.5 text-[#FF8000]" />
               <span>
@@ -936,7 +936,7 @@ export default function App() {
               href={KAIROS_INFO.facebookUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 font-semibold text-[#1877F2] hover:underline"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#60A5FA] hover:underline"
             >
               <span>
                 {lang === 'ar' ? 'فيسبوك (العروض الدائمة)' : 'Facebook · Dauerangebote'}
@@ -953,7 +953,7 @@ export default function App() {
 
       {/* Mobile Sticky Bottom Cart Bar (when items > 0) */}
       {cartCount > 0 && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-white/95 backdrop-blur-md border-t border-[#EAE5DF]">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-[#14171A]/95 backdrop-blur-md border-t border-[#262B31]">
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}

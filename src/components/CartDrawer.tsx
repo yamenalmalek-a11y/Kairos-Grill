@@ -548,16 +548,16 @@ export function CartDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-[#242E30]/55 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex justify-end bg-black/75 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-label={lang === 'ar' ? 'سلة الطلبات' : 'Warenkorb'}
     >
-      <div className="w-full max-w-md bg-white h-full flex flex-col shadow-2xl">
+      <div className="w-full max-w-md bg-[#14171A] border-s border-[#262B31] h-full flex flex-col shadow-2xl text-[#F4F5F6]">
         {/* Drawer Header */}
-        <div className="px-5 py-4 border-b border-[#EAE5DF] flex items-center justify-between gap-3 shrink-0">
+        <div className="px-5 py-4 border-b border-[#262B31] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-[12px] bg-[#FFF3E6] text-[#FF8000] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-[12px] bg-[#FF8000]/15 text-[#FF8000] flex items-center justify-center">
               {dispatchedOrder ? (
                 <Receipt className="w-4 h-4" strokeWidth={2.2} />
               ) : (
@@ -565,7 +565,7 @@ export function CartDrawer({
               )}
             </div>
             <div>
-              <h2 className="font-display text-[17px] font-bold text-[#242E30]">
+              <h2 className="font-display text-[17px] font-bold text-[#F4F5F6]">
                 {dispatchedOrder
                   ? lang === 'ar'
                     ? `فاتورة الطلب #${dispatchedOrder.orderNumber}`
@@ -574,7 +574,7 @@ export function CartDrawer({
                     ? 'سلة الطلبات'
                     : 'Ihr Warenkorb'}
               </h2>
-              <p className="text-[12px] text-[#5A6568]">
+              <p className="text-[12px] text-[#A3ACB3]">
                 Kairos Grill · WhatsApp {KAIROS_INFO.phoneDisplay}
               </p>
             </div>
@@ -584,7 +584,7 @@ export function CartDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close drawer"
-            className="min-h-[42px] min-w-[42px] rounded-[12px] flex items-center justify-center text-[#5A6568] hover:bg-[#F8F5F2] transition-colors"
+            className="min-h-[42px] min-w-[42px] rounded-[12px] flex items-center justify-center text-[#A3ACB3] hover:bg-[#1C2024] hover:text-[#F4F5F6] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -593,8 +593,8 @@ export function CartDrawer({
         {/* Post-Order Confirmation: Live Tablet Delivery + WhatsApp Invoice Dispatch */}
         {dispatchedOrder ? (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            <div className="p-3.5 rounded-[12px] bg-[#ECFDF3] border border-[#16A34A]/30 space-y-1">
-              <div className="flex items-center gap-2 text-[13px] font-bold text-[#15803D]">
+            <div className="p-3.5 rounded-[12px] bg-[#22C55E]/15 border border-[#22C55E]/35 space-y-1">
+              <div className="flex items-center gap-2 text-[13px] font-bold text-[#4ADE80]">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>
                   {dispatchedOrder.orderId
@@ -624,9 +624,9 @@ export function CartDrawer({
             </a>
 
             {/* Detailed Receipt Card */}
-            <div className="rounded-[12px] bg-white border border-[#EAE5DF] shadow-xs overflow-hidden">
-              <div className="px-4 py-3 bg-[#F8F5F2] border-b border-[#EAE5DF] flex items-center justify-between">
-                <span className="font-display text-[13px] font-bold text-[#242E30]">
+            <div className="rounded-[12px] bg-[#1C2024] border border-[#262B31] shadow-xs overflow-hidden">
+              <div className="px-4 py-3 bg-[#0B0D0F]/60 border-b border-[#262B31] flex items-center justify-between">
+                <span className="font-display text-[13px] font-bold text-[#F4F5F6]">
                   {lang === 'ar' ? 'الفاتورة التفصيلية (شاملة الضريبة)' : 'Detaillierte Rechnung (inkl. MwSt.)'}
                 </span>
                 <span className="text-[12px] font-semibold text-[#FF8000] tabular-nums">
@@ -634,30 +634,30 @@ export function CartDrawer({
                 </span>
               </div>
 
-              <div className="px-4 py-2.5 border-b border-[#EAE5DF] text-[12px] text-[#5A6568] space-y-0.5">
+              <div className="px-4 py-2.5 border-b border-[#262B31] text-[12px] text-[#A3ACB3] space-y-0.5">
                 <p>
-                  <strong className="text-[#242E30]">{lang === 'ar' ? 'الاسم:' : 'Name:'}</strong>{' '}
+                  <strong className="text-[#F4F5F6]">{lang === 'ar' ? 'الاسم:' : 'Name:'}</strong>{' '}
                   {dispatchedOrder.customerName}
                 </p>
                 <p className="truncate">
-                  <strong className="text-[#242E30]">{lang === 'ar' ? 'الموقع:' : 'Adresse:'}</strong>{' '}
+                  <strong className="text-[#F4F5F6]">{lang === 'ar' ? 'الموقع:' : 'Adresse:'}</strong>{' '}
                   {dispatchedOrder.locationLabel}
                 </p>
               </div>
 
-              <div className="divide-y divide-[#EAE5DF]/80 px-4">
+              <div className="divide-y divide-[#262B31] px-4">
                 {dispatchedOrder.items.map((entry) => {
                   const unitPrice = getEntryUnitPrice(entry);
                   const { dish, variant, quantity } = entry;
                   return (
                     <div key={entry.key} className="py-2.5 flex items-start justify-between gap-3 text-[13px]">
                       <div className="min-w-0">
-                        <p className="font-semibold text-[#242E30]">
+                        <p className="font-semibold text-[#F4F5F6]">
                           {dish.itemNumber ? `#${dish.itemNumber} ` : ''}
                           {lang === 'ar' ? dish.nameAr : dish.nameDe}
                           {variant ? ` (${lang === 'ar' ? variant.labelAr : variant.labelDe})` : ''}
                         </p>
-                        <p className="text-[11px] text-[#5A6568] tabular-nums">
+                        <p className="text-[11px] text-[#A3ACB3] tabular-nums">
                           {quantity} × {formatEuro(unitPrice)} ·{' '}
                           {dish.taxRate === 0.19
                             ? lang === 'ar'
@@ -668,7 +668,7 @@ export function CartDrawer({
                               : '7% MwSt.'}
                         </p>
                       </div>
-                      <span className="font-bold text-[#242E30] tabular-nums shrink-0">
+                      <span className="font-bold text-[#F4F5F6] tabular-nums shrink-0">
                         {formatEuro(unitPrice * quantity)}
                       </span>
                     </div>
@@ -676,27 +676,27 @@ export function CartDrawer({
                 })}
               </div>
 
-              <div className="px-4 py-3 bg-[#F8F5F2]/70 border-t border-[#EAE5DF] space-y-1.5 text-[13px]">
-                <div className="flex justify-between text-[#5A6568] tabular-nums">
+              <div className="px-4 py-3 bg-[#0B0D0F]/60 border-t border-[#262B31] space-y-1.5 text-[13px]">
+                <div className="flex justify-between text-[#A3ACB3] tabular-nums">
                   <span>{lang === 'ar' ? 'المجموع الفرعي (صافي)' : 'Zwischensumme (Netto)'}</span>
                   <span>{formatEuro(dispatchedOrder.totals.subtotal)}</span>
                 </div>
 
                 {dispatchedOrder.totals.foodTax > 0 && (
-                  <div className="flex justify-between text-[#5A6568] tabular-nums">
+                  <div className="flex justify-between text-[#A3ACB3] tabular-nums">
                     <span>{lang === 'ar' ? 'ضريبة الأكل (7%)' : 'MwSt. Speisen (7%)'}</span>
                     <span>+{formatEuro(dispatchedOrder.totals.foodTax)}</span>
                   </div>
                 )}
 
                 {dispatchedOrder.totals.drinksTax > 0 && (
-                  <div className="flex justify-between text-[#5A6568] tabular-nums">
+                  <div className="flex justify-between text-[#A3ACB3] tabular-nums">
                     <span>{lang === 'ar' ? 'ضريبة المشروبات (19%)' : 'MwSt. Getränke (19%)'}</span>
                     <span>+{formatEuro(dispatchedOrder.totals.drinksTax)}</span>
                   </div>
                 )}
 
-                <div className="flex justify-between text-[#5A6568] tabular-nums">
+                <div className="flex justify-between text-[#A3ACB3] tabular-nums">
                   <span>{lang === 'ar' ? 'رسوم التوصيل' : 'Liefergebühr'}</span>
                   <span>
                     {dispatchedOrder.totals.deliveryFee === 0
@@ -707,7 +707,7 @@ export function CartDrawer({
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 border-t border-[#EAE5DF] font-display text-[16px] font-extrabold text-[#242E30] tabular-nums">
+                <div className="flex justify-between items-center pt-2 border-t border-[#262B31] font-display text-[16px] font-extrabold text-[#F4F5F6] tabular-nums">
                   <span>{lang === 'ar' ? 'المجموع النهائي' : 'Gesamtbetrag'}</span>
                   <span className="text-[#FF8000]">{formatEuro(dispatchedOrder.totals.total)}</span>
                 </div>
@@ -731,9 +731,9 @@ export function CartDrawer({
               </a>
             )}
 
-            <div className="bg-[#F8F5F2] rounded-[12px] p-3.5 border border-[#EAE5DF]">
+            <div className="bg-[#1C2024] rounded-[12px] p-3.5 border border-[#262B31]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[12px] font-bold text-[#242E30]">
+                <span className="text-[12px] font-bold text-[#F4F5F6]">
                   {lang === 'ar' ? 'معاينة رسالة واتساب:' : 'WhatsApp Nachrichtenvorschau:'}
                 </span>
                 <button
@@ -755,7 +755,7 @@ export function CartDrawer({
               </div>
               <pre
                 dir="auto"
-                className="whitespace-pre-wrap text-[12px] text-[#242E30] font-sans leading-relaxed"
+                className="whitespace-pre-wrap text-[12px] text-[#F4F5F6] font-sans leading-relaxed"
               >
                 {dispatchedOrder.messageText}
               </pre>
@@ -764,7 +764,7 @@ export function CartDrawer({
             <button
               type="button"
               onClick={handleTrackOrDone}
-              className="w-full h-11 rounded-[12px] bg-[#242E30] hover:bg-[#354245] text-white text-[13px] font-bold transition-colors"
+              className="w-full h-11 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[#F4F5F6] text-[13px] font-bold transition-colors"
             >
               {dispatchedOrder.orderId
                 ? lang === 'ar'
@@ -777,13 +777,13 @@ export function CartDrawer({
           </div>
         ) : cart.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-14 h-14 rounded-[16px] bg-[#F8F5F2] text-[#FF8000] flex items-center justify-center mb-3">
+            <div className="w-14 h-14 rounded-[16px] bg-[#1C2024] border border-[#262B31] text-[#FF8000] flex items-center justify-center mb-3">
               <ShoppingBag className="w-6 h-6" />
             </div>
-            <p className="font-display text-[16px] font-bold text-[#242E30]">
+            <p className="font-display text-[16px] font-bold text-[#F4F5F6]">
               {lang === 'ar' ? 'سلتك فارغة حالياً' : 'Ihr Warenkorb ist leer'}
             </p>
-            <p className="text-[13px] text-[#5A6568] mt-1 max-w-xs">
+            <p className="text-[13px] text-[#A3ACB3] mt-1 max-w-xs">
               {lang === 'ar'
                 ? 'اختر وجباتك ومشروباتك المفضلة لإرسال طلبك مباشرة للمطعم وعبر واتساب.'
                 : 'Wählen Sie Speisen und Getränke aus unserer Speisekarte.'}
@@ -800,7 +800,7 @@ export function CartDrawer({
           <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {/* Items */}
-              <div className="divide-y divide-[#EAE5DF]">
+              <div className="divide-y divide-[#262B31]">
                 {cart.map((entry) => {
                   const unitPrice = getEntryUnitPrice(entry);
                   const { dish, variant, quantity } = entry;
@@ -814,14 +814,14 @@ export function CartDrawer({
                         className="w-14 h-14 rounded-[12px] shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="font-display text-[13px] font-bold text-[#242E30] truncate">
+                        <p className="font-display text-[13px] font-bold text-[#F4F5F6] truncate">
                           {dish.itemNumber ? `#${dish.itemNumber} ` : ''}
                           {lang === 'ar' ? dish.nameAr : dish.nameDe}
                           {variant ? ` (${lang === 'ar' ? variant.labelAr : variant.labelDe})` : ''}
                         </p>
-                        <p className="text-[12px] text-[#5A6568] tabular-nums">
+                        <p className="text-[12px] text-[#A3ACB3] tabular-nums">
                           {formatEuro(unitPrice)} × {quantity} ={' '}
-                          <strong className="text-[#242E30]">
+                          <strong className="text-[#F4F5F6]">
                             {formatEuro(unitPrice * quantity)}
                           </strong>{' '}
                           <span className="text-[11px]">
@@ -834,22 +834,22 @@ export function CartDrawer({
                           type="button"
                           onClick={() => onUpdateQty(entry.key, -1)}
                           aria-label="Decrease quantity"
-                          className="w-8 h-8 rounded-[10px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] flex items-center justify-center"
+                          className="w-8 h-8 rounded-[10px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[#F4F5F6] flex items-center justify-center"
                         >
                           {quantity === 1 ? (
-                            <Trash2 className="w-3.5 h-3.5 text-[#5A6568]" />
+                            <Trash2 className="w-3.5 h-3.5 text-[#A3ACB3]" />
                           ) : (
                             <Minus className="w-3.5 h-3.5" />
                           )}
                         </button>
-                        <span className="w-6 text-center text-[13px] font-bold tabular-nums">
+                        <span className="w-6 text-center text-[13px] font-bold tabular-nums text-[#F4F5F6]">
                           {quantity}
                         </span>
                         <button
                           type="button"
                           onClick={() => onUpdateQty(entry.key, 1)}
                           aria-label="Increase quantity"
-                          className="w-8 h-8 rounded-[10px] bg-[#FFF3E6] hover:bg-[#FF8000] text-[#FF8000] hover:text-white flex items-center justify-center transition-colors"
+                          className="w-8 h-8 rounded-[10px] bg-[#FF8000]/15 hover:bg-[#FF8000] text-[#FF8000] hover:text-white border border-[#FF8000]/30 flex items-center justify-center transition-colors"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -860,14 +860,14 @@ export function CartDrawer({
               </div>
 
               {/* Delivery vs Pickup */}
-              <div className="p-1 bg-[#F8F5F2] rounded-[12px] grid grid-cols-2 gap-1">
+              <div className="p-1 bg-[#1C2024] border border-[#262B31] rounded-[12px] grid grid-cols-2 gap-1">
                 <button
                   type="button"
                   onClick={() => setOrderMode('delivery')}
                   className={`py-2 px-3 rounded-[10px] text-[12px] font-bold transition-colors ${
                     orderMode === 'delivery'
-                      ? 'bg-white text-[#242E30] shadow-xs'
-                      : 'text-[#5A6568]'
+                      ? 'bg-[#FF8000] text-white shadow-xs'
+                      : 'text-[#A3ACB3] hover:text-[#F4F5F6]'
                   }`}
                 >
                   {lang === 'ar' ? 'توصيل للعنوان' : 'Lieferservice'}
@@ -877,8 +877,8 @@ export function CartDrawer({
                   onClick={() => setOrderMode('pickup')}
                   className={`py-2 px-3 rounded-[10px] text-[12px] font-bold transition-colors ${
                     orderMode === 'pickup'
-                      ? 'bg-white text-[#242E30] shadow-xs'
-                      : 'text-[#5A6568]'
+                      ? 'bg-[#FF8000] text-white shadow-xs'
+                      : 'text-[#A3ACB3] hover:text-[#F4F5F6]'
                   }`}
                 >
                   {lang === 'ar' ? 'استلام من المطعم' : 'Abholung vor Ort'}
@@ -888,7 +888,7 @@ export function CartDrawer({
               {/* Customer Inputs */}
               <div className="space-y-3">
                 <div>
-                  <label className="block text-[12px] font-semibold text-[#242E30] mb-1">
+                  <label className="block text-[12px] font-semibold text-[#F4F5F6] mb-1">
                     {lang === 'ar' ? 'الاسم *' : 'Name *'}
                   </label>
                   <input
@@ -896,12 +896,12 @@ export function CartDrawer({
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder={lang === 'ar' ? 'مثال: أحمد' : 'z. B. Max'}
-                    className="w-full h-11 px-3.5 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[13px]"
+                    className="w-full h-11 px-3.5 rounded-[12px] bg-[#1C2024] border border-[#262B31] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:border-[#FF8000] focus:outline-none text-[13px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-semibold text-[#242E30] mb-1">
+                  <label className="block text-[12px] font-semibold text-[#F4F5F6] mb-1">
                     {lang === 'ar' ? 'رقم الهاتف / واتساب *' : 'Telefonnummer *'}
                   </label>
                   <input
@@ -910,14 +910,14 @@ export function CartDrawer({
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="0176 ..."
                     dir="ltr"
-                    className="w-full h-11 px-3.5 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[13px] tabular-nums"
+                    className="w-full h-11 px-3.5 rounded-[12px] bg-[#1C2024] border border-[#262B31] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:border-[#FF8000] focus:outline-none text-[13px] tabular-nums"
                   />
                 </div>
 
                 {orderMode === 'delivery' ? (
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[12px] font-semibold text-[#242E30]">
+                      <label className="text-[12px] font-semibold text-[#F4F5F6]">
                         {lang === 'ar' ? 'عنوان التوصيل والموقع *' : 'Lieferadresse in Rostock *'}
                       </label>
                       <button
@@ -948,11 +948,11 @@ export function CartDrawer({
                             ? 'الشارع ورقم المنزل (مثال: Schiffbauerring 59)'
                             : 'Straße & Hausnummer in Rostock'
                         }
-                        className="w-full h-11 pl-9 pr-3.5 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[13px]"
+                        className="w-full h-11 pl-9 pr-3.5 rounded-[12px] bg-[#1C2024] border border-[#262B31] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:border-[#FF8000] focus:outline-none text-[13px]"
                       />
 
                       {showSuggestions && suggestions.length > 0 && (
-                        <ul className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-[#EAE5DF] rounded-[12px] shadow-lg overflow-hidden divide-y divide-[#EAE5DF]/70">
+                        <ul className="absolute left-0 right-0 top-full mt-1 z-20 bg-[#1C2024] border border-[#262B31] rounded-[12px] shadow-2xl overflow-hidden divide-y divide-[#262B31]">
                           {suggestions.map((item) => (
                             <li key={item.label}>
                               <button
@@ -961,7 +961,7 @@ export function CartDrawer({
                                   e.preventDefault();
                                   handleSelectSuggestion(item);
                                 }}
-                                className="w-full text-start px-3.5 py-2.5 text-[12px] font-semibold text-[#242E30] hover:bg-[#FFF3E6] flex items-center gap-2 transition-colors"
+                                className="w-full text-start px-3.5 py-2.5 text-[12px] font-semibold text-[#F4F5F6] hover:bg-[#23282D] flex items-center gap-2 transition-colors"
                               >
                                 <MapPin className="w-3.5 h-3.5 text-[#FF8000] shrink-0" />
                                 <span className="truncate">{item.label}</span>
@@ -976,10 +976,10 @@ export function CartDrawer({
                       <p
                         className={`mt-1.5 text-[11px] leading-snug ${
                           gpsStatus.tone === 'success'
-                            ? 'text-[#16A34A] font-medium'
+                            ? 'text-[#4ADE80] font-medium'
                             : gpsStatus.tone === 'warn'
-                              ? 'text-[#D97706] font-medium'
-                              : 'text-[#5A6568]'
+                              ? 'text-[#FBBF24] font-medium'
+                              : 'text-[#A3ACB3]'
                         }`}
                       >
                         {gpsStatus.text}
@@ -991,7 +991,7 @@ export function CartDrawer({
                         href={`https://maps.google.com/?q=${gpsCoords.lat.toFixed(6)},${gpsCoords.lng.toFixed(6)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] hover:underline"
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#60A5FA] hover:underline"
                       >
                         <span>
                           {lang === 'ar'
@@ -1004,7 +1004,7 @@ export function CartDrawer({
 
                     {/* Quick Rostock Area Shortcuts */}
                     <div className="mt-2">
-                      <p className="text-[11px] text-[#5A6568] mb-1.5">
+                      <p className="text-[11px] text-[#A3ACB3] mb-1.5">
                         {lang === 'ar' ? 'أو اختر منطقتك في روستوك:' : 'Stadtteil schnell wählen:'}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
@@ -1013,7 +1013,7 @@ export function CartDrawer({
                             key={area}
                             type="button"
                             onClick={() => handleSelectArea(area)}
-                            className="px-2.5 py-1 rounded-[8px] bg-[#F8F5F2] hover:bg-[#FFF3E6] border border-[#EAE5DF] text-[11px] font-medium text-[#242E30] transition-colors"
+                            className="px-2.5 py-1 rounded-[8px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[11px] font-medium text-[#F4F5F6] transition-colors"
                           >
                             {area.split(',')[0]}
                           </button>
@@ -1022,7 +1022,7 @@ export function CartDrawer({
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-[12px] bg-[#F8F5F2] text-[12px] text-[#242E30]">
+                  <div className="p-3 rounded-[12px] bg-[#1C2024] border border-[#262B31] text-[12px] text-[#F4F5F6]">
                     <strong>{lang === 'ar' ? 'عنوان الاستلام:' : 'Abholadresse:'}</strong>{' '}
                     {KAIROS_INFO.address}
                   </div>
@@ -1030,7 +1030,7 @@ export function CartDrawer({
 
                 {/* Payment Method */}
                 <div>
-                  <label className="block text-[12px] font-semibold text-[#242E30] mb-1.5">
+                  <label className="block text-[12px] font-semibold text-[#F4F5F6] mb-1.5">
                     {lang === 'ar' ? 'طريقة الدفع' : 'Zahlungsart'}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1039,8 +1039,8 @@ export function CartDrawer({
                       onClick={() => setPaymentMethod('cash')}
                       className={`py-2.5 px-3 rounded-[12px] border text-[12px] font-semibold transition-colors ${
                         paymentMethod === 'cash'
-                          ? 'border-[#FF8000] bg-[#FFF3E6] text-[#242E30]'
-                          : 'border-[#EAE5DF] bg-white text-[#5A6568]'
+                          ? 'border-[#FF8000] bg-[#FF8000]/15 text-[#F4F5F6]'
+                          : 'border-[#262B31] bg-[#1C2024] text-[#A3ACB3]'
                       }`}
                     >
                       {lang === 'ar' ? 'نقداً عند الاستلام' : 'Barzahlung'}
@@ -1050,8 +1050,8 @@ export function CartDrawer({
                       onClick={() => setPaymentMethod('payment_link')}
                       className={`py-2.5 px-3 rounded-[12px] border text-[12px] font-semibold transition-colors ${
                         paymentMethod === 'payment_link'
-                          ? 'border-[#FF8000] bg-[#FFF3E6] text-[#242E30]'
-                          : 'border-[#EAE5DF] bg-white text-[#5A6568]'
+                          ? 'border-[#FF8000] bg-[#FF8000]/15 text-[#F4F5F6]'
+                          : 'border-[#262B31] bg-[#1C2024] text-[#A3ACB3]'
                       }`}
                     >
                       {lang === 'ar' ? 'الدفع عبر الرابط' : 'Online-Zahlungslink'}
@@ -1060,7 +1060,7 @@ export function CartDrawer({
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-semibold text-[#242E30] mb-1">
+                  <label className="block text-[12px] font-semibold text-[#F4F5F6] mb-1">
                     {lang === 'ar' ? 'ملاحظات إضافية (اختياري)' : 'Hinweise zur Bestellung'}
                   </label>
                   <input
@@ -1072,20 +1072,20 @@ export function CartDrawer({
                         ? 'مثال: الطابق الثالث، بدون بصل...'
                         : 'z. B. 3. OG, ohne Zwiebeln...'
                     }
-                    className="w-full h-10 px-3.5 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[13px]"
+                    className="w-full h-10 px-3.5 rounded-[12px] bg-[#1C2024] border border-[#262B31] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:border-[#FF8000] focus:outline-none text-[13px]"
                   />
                 </div>
               </div>
 
               {formError && (
-                <div className="p-3 rounded-[12px] bg-red-50 border border-red-200 text-[12px] font-semibold text-red-700">
+                <div className="p-3 rounded-[12px] bg-red-500/15 border border-red-500/35 text-[12px] font-semibold text-red-400">
                   {formError}
                 </div>
               )}
 
               {/* Live Detailed Invoice Preview with 7% & 19% VAT Breakdown */}
-              <div className="rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] p-3.5 space-y-2">
-                <p className="font-display text-[12px] font-bold text-[#242E30]">
+              <div className="rounded-[12px] bg-[#1C2024] border border-[#262B31] p-3.5 space-y-2">
+                <p className="font-display text-[12px] font-bold text-[#F4F5F6]">
                   {lang === 'ar'
                     ? 'ملخص الفاتورة التفصيلية والضرائب'
                     : 'Rechnungsübersicht & MwSt.'}
@@ -1095,38 +1095,38 @@ export function CartDrawer({
                     const unitPrice = getEntryUnitPrice(entry);
                     const { dish, variant, quantity } = entry;
                     return (
-                      <div key={entry.key} className="flex justify-between text-[#5A6568] tabular-nums">
+                      <div key={entry.key} className="flex justify-between text-[#A3ACB3] tabular-nums">
                         <span className="truncate pe-2">
                           {quantity} × {dish.itemNumber ? `#${dish.itemNumber} ` : ''}
                           {lang === 'ar' ? dish.nameAr : dish.nameDe}
                           {variant ? ` (${lang === 'ar' ? variant.labelAr : variant.labelDe})` : ''} (
                           {formatEuro(unitPrice)})
                         </span>
-                        <span className="font-semibold text-[#242E30] shrink-0">
+                        <span className="font-semibold text-[#F4F5F6] shrink-0">
                           {formatEuro(unitPrice * quantity)}
                         </span>
                       </div>
                     );
                   })}
                 </div>
-                <div className="pt-2 border-t border-[#EAE5DF] space-y-1 text-[12px] tabular-nums">
-                  <div className="flex justify-between text-[#5A6568]">
+                <div className="pt-2 border-t border-[#262B31] space-y-1 text-[12px] tabular-nums">
+                  <div className="flex justify-between text-[#A3ACB3]">
                     <span>{lang === 'ar' ? 'المجموع الفرعي (صافي)' : 'Zwischensumme (Netto)'}</span>
                     <span>{formatEuro(totals.subtotal)}</span>
                   </div>
                   {totals.foodTax > 0 && (
-                    <div className="flex justify-between text-[#5A6568]">
+                    <div className="flex justify-between text-[#A3ACB3]">
                       <span>{lang === 'ar' ? 'ضريبة الأكل (7%)' : 'MwSt. Speisen (7%)'}</span>
                       <span>+{formatEuro(totals.foodTax)}</span>
                     </div>
                   )}
                   {totals.drinksTax > 0 && (
-                    <div className="flex justify-between text-[#5A6568]">
+                    <div className="flex justify-between text-[#A3ACB3]">
                       <span>{lang === 'ar' ? 'ضريبة المشروبات (19%)' : 'MwSt. Getränke (19%)'}</span>
                       <span>+{formatEuro(totals.drinksTax)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-[#5A6568]">
+                  <div className="flex justify-between text-[#A3ACB3]">
                     <span>{lang === 'ar' ? 'رسوم التوصيل' : 'Liefergebühr'}</span>
                     <span>
                       {totals.deliveryFee === 0
@@ -1141,15 +1141,15 @@ export function CartDrawer({
             </div>
 
             {/* Footer Totals & Combined Tablet + WhatsApp Submit */}
-            <div className="p-5 border-t border-[#EAE5DF] bg-white space-y-2 shrink-0">
+            <div className="p-5 border-t border-[#262B31] bg-[#14171A] space-y-2 shrink-0">
               {orderMode === 'delivery' && totals.subtotal < KAIROS_INFO.freeDeliveryThreshold && (
-                <p className="text-[11px] text-[#5A6568]">
+                <p className="text-[11px] text-[#A3ACB3]">
                   {lang === 'ar'
                     ? `توصيل مجاني للطلبات فوق ${formatEuro(KAIROS_INFO.freeDeliveryThreshold)}`
                     : `Kostenlose Lieferung ab ${formatEuro(KAIROS_INFO.freeDeliveryThreshold)}`}
                 </p>
               )}
-              <div className="flex justify-between text-[17px] font-extrabold text-[#242E30] tabular-nums">
+              <div className="flex justify-between text-[17px] font-extrabold text-[#F4F5F6] tabular-nums">
                 <span>
                   {lang === 'ar' ? 'المجموع النهائي (شامل الضريبة)' : 'Gesamtbetrag (inkl. MwSt.)'}
                 </span>

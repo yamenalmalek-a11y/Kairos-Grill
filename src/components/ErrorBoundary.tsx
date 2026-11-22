@@ -29,17 +29,17 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#F8F5F2] flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white rounded-[16px] border border-[#EAE5DF] p-6 text-center shadow-sm space-y-4">
+        <div className="min-h-screen bg-[#0B0D0F] flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-[#14171A] rounded-[16px] border border-[#262B31] p-6 text-center shadow-xl space-y-4">
             <img
               src="/pwa-192x192.png"
               alt="Kairos Grill"
               className="w-16 h-16 mx-auto object-contain"
             />
-            <h1 className="font-display text-[20px] font-extrabold text-[#242E30]">
+            <h1 className="font-display text-[20px] font-extrabold text-[#F4F5F6]">
               حدث خطأ غير متوقع / Etwas ist schiefgelaufen
             </h1>
-            <p className="text-[13px] text-[#5A6568] leading-relaxed break-words">
+            <p className="text-[13px] text-[#A3ACB3] leading-relaxed break-words">
               {this.state.errorMessage}
             </p>
             <button

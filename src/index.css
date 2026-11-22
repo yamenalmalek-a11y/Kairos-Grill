@@ -2,19 +2,21 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
     --color-primary: #FF8000;
     --color-primary-hover: #E67300;
-    --color-surface: #FFFFFF;
-    --color-canvas: #F8F5F2;
-    --color-ink: #242E30;
-    --color-ink-muted: #5A6568;
-    --color-hairline: #EAE5DF;
+    --color-surface: #14171A;
+    --color-canvas: #0B0D0F;
+    --color-ink: #F4F5F6;
+    --color-ink-muted: #A3ACB3;
+    --color-hairline: #262B31;
   }
 
+  html,
   body {
     font-family: 'Cairo', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #F8F5F2;
-    color: #242E30;
+    background-color: #0B0D0F;
+    color: #F4F5F6;
   }
 
   h1, h2, h3, h4, .font-display {

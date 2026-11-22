@@ -83,11 +83,11 @@ export function IntroVideoModal({ isOpen, onClose, lang }: IntroVideoModalProps)
       role="dialog"
       aria-modal="true"
       aria-label={lang === 'ar' ? 'فيديو كايروس غريل الترحيبي' : 'Kairos Grill Willkommensvideo'}
-      className="fixed inset-0 z-50 bg-[#14191B]/92 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-50 bg-[#0B0D0F]/92 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="relative h-[min(88dvh,700px)] max-w-full aspect-[9/16] rounded-[16px] overflow-hidden bg-[#181E20] shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-white/15 flex flex-col justify-between"
+        className="relative h-[min(88dvh,700px)] max-w-full aspect-[9/16] rounded-[16px] overflow-hidden bg-[#14171A] shadow-[0_24px_64px_rgba(0,0,0,0.75)] border border-[#262B31] flex flex-col justify-between"
         onClick={(e) => e.stopPropagation()}
       >
         <video
@@ -144,7 +144,7 @@ export function IntroVideoModal({ isOpen, onClose, lang }: IntroVideoModalProps)
               onClick={toggleMute}
               className={`h-10 px-3.5 rounded-[10px] text-[12px] font-bold inline-flex items-center gap-2 backdrop-blur-xs transition-colors whitespace-nowrap shrink-0 ${
                 isMuted
-                  ? 'bg-white text-[#242E30] hover:bg-[#FFF3E6]'
+                  ? 'bg-[#14171A]/90 text-[#F4F5F6] hover:bg-[#1C2024] border border-[#FF8000]/50'
                   : 'bg-black/55 text-white hover:bg-black/75 border border-white/20'
               }`}
             >

@@ -67,11 +67,11 @@ export function VideoShowcase({ lang, onJumpToCategory }: VideoShowcaseProps) {
       id="kitchen-story"
       className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-10 pb-2"
     >
-      <div className="bg-white rounded-[16px] border border-[#EAE5DF] shadow-[0_4px_20px_rgba(36,46,48,0.05)] p-5 sm:p-8 lg:p-10">
+      <div className="bg-[#14171A] rounded-[16px] border border-[#262B31] shadow-[0_8px_28px_rgba(0,0,0,0.45)] p-5 sm:p-8 lg:p-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* Portrait 9:16 Video Frame */}
           <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-full max-w-[320px] sm:max-w-[340px] aspect-[9/16] rounded-[14px] overflow-hidden bg-[#181E20] shadow-[0_14px_36px_rgba(36,46,48,0.16)] border border-[#EAE5DF]">
+            <div className="relative w-full max-w-[320px] sm:max-w-[340px] aspect-[9/16] rounded-[14px] overflow-hidden bg-[#0B0D0F] shadow-[0_14px_36px_rgba(0,0,0,0.5)] border border-[#262B31]">
               {!videoError ? (
                 <video
                   ref={videoRef}
@@ -148,38 +148,38 @@ export function VideoShowcase({ lang, onJumpToCategory }: VideoShowcaseProps) {
               <span>
                 {lang === 'ar' ? 'من مطبخ كايروس غريل' : 'Aus der Kairos Küche'}
               </span>
-              <span aria-hidden="true" className="text-[#5A6568]">
+              <span aria-hidden="true" className="text-[#A3ACB3]">
                 ·
               </span>
-              <span className="text-[#5A6568] font-semibold">
+              <span className="text-[#A3ACB3] font-semibold">
                 {lang === 'ar' ? 'طازج يومياً ١٠٠٪' : '100% Hausgemacht in Rostock'}
               </span>
             </div>
 
-            <h2 className="mt-2 font-display text-[26px] sm:text-[34px] font-extrabold text-[#242E30] leading-[1.24] [text-wrap:balance]">
+            <h2 className="mt-2 font-display text-[26px] sm:text-[34px] font-extrabold text-[#F4F5F6] leading-[1.24] [text-wrap:balance]">
               {lang === 'ar'
                 ? 'من قلب المطبخ إلى مائدتكم... قرمشة ذهبية ونكهة تبقى بالبال'
                 : 'Knusprig, saftig & voller Aroma — frisch zubereitet für Sie'}
             </h2>
 
-            <p className="mt-3 text-[15px] text-[#5A6568] leading-relaxed max-w-2xl">
+            <p className="mt-3 text-[15px] text-[#A3ACB3] leading-relaxed max-w-2xl">
               {lang === 'ar'
                 ? 'نؤمن في كايروس غريل أن اللقمة الطيبة تبدأ من المكونات الطازجة، التتبيلة المتقنة، وحبّ الضيافة. شاهدوا تحضيراتنا واختاروا وجبتكم المفضلة لتصلكم ساخنة أينما كنتم في روستوك.'
                 : 'Gutes Essen beginnt mit frischen Zutaten, ehrlichen Gewürzen und echter Leidenschaft. Entdecken Sie unsere beliebtesten Snacks, Wings und frisch gebackenen Kreationen.'}
             </p>
 
             {/* Culinary Highlights List separated by hairline dividers */}
-            <div className="mt-6 divide-y divide-[#EAE5DF] border-y border-[#EAE5DF]">
+            <div className="mt-6 divide-y divide-[#262B31] border-y border-[#262B31]">
               {highlights.map((item) => (
                 <div key={item.num} className="py-3.5 flex items-baseline gap-4">
                   <span className="font-display text-[14px] font-extrabold text-[#FF8000] tabular-nums shrink-0">
                     {item.num}.
                   </span>
                   <div className="min-w-0">
-                    <h3 className="font-display text-[15px] font-bold text-[#242E30]">
+                    <h3 className="font-display text-[15px] font-bold text-[#F4F5F6]">
                       {lang === 'ar' ? item.titleAr : item.titleDe}
                     </h3>
-                    <p className="text-[13px] text-[#5A6568] mt-0.5 leading-relaxed">
+                    <p className="text-[13px] text-[#A3ACB3] mt-0.5 leading-relaxed">
                       {lang === 'ar' ? item.descAr : item.descDe}
                     </p>
                   </div>
@@ -205,7 +205,7 @@ export function VideoShowcase({ lang, onJumpToCategory }: VideoShowcaseProps) {
               <a
                 href="#menu"
                 onClick={() => onJumpToCategory('burger')}
-                className="h-11 px-5 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] border border-[#EAE5DF] text-[13px] font-bold inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0"
+                className="h-11 px-5 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] text-[#F4F5F6] border border-[#262B31] text-[13px] font-bold inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0"
               >
                 <span>
                   {lang === 'ar' ? 'تصفح البرغر المنزلي' : 'Handmade Burger entdecken'}
@@ -213,12 +213,12 @@ export function VideoShowcase({ lang, onJumpToCategory }: VideoShowcaseProps) {
               </a>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-[#EAE5DF]/80">
+            <div className="mt-4 pt-4 border-t border-[#262B31]">
               <a
                 href={KAIROS_INFO.facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-[13px] font-bold text-[#1877F2] hover:underline"
+                className="inline-flex items-center gap-2 text-[13px] font-bold text-[#60A5FA] hover:underline"
               >
                 <svg
                   viewBox="0 0 24 24"

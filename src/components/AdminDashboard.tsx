@@ -54,32 +54,32 @@ const STATUS_LABELS: Record<OrderStatus, { ar: string; de: string; tone: string 
   pending: {
     ar: 'طلب جديد — بانتظار الاستلام',
     de: 'Neu — Warten auf Annahme',
-    tone: 'text-[#FF8000] bg-[#FFF3E6]',
+    tone: 'text-[#FF8000] bg-[#FF8000]/15',
   },
   accepted: {
     ar: 'تم استلام الطلب',
     de: 'Angenommen',
-    tone: 'text-[#16A34A] bg-[#ECFDF3]',
+    tone: 'text-[#4ADE80] bg-[#22C55E]/15',
   },
   preparing: {
     ar: 'جاري التحضير',
     de: 'In Zubereitung',
-    tone: 'text-[#2563EB] bg-[#EFF6FF]',
+    tone: 'text-[#60A5FA] bg-[#2563EB]/20',
   },
   delivering: {
     ar: 'خرج للتوصيل',
     de: 'Unterwegs',
-    tone: 'text-[#7C3AED] bg-[#F5F3FF]',
+    tone: 'text-[#C084FC] bg-[#7C3AED]/20',
   },
   completed: {
     ar: 'تم التسليم',
     de: 'Abgeschlossen',
-    tone: 'text-[#5A6568] bg-[#F8F5F2]',
+    tone: 'text-[#A3ACB3] bg-[#1C2024]',
   },
   cancelled: {
     ar: 'ملغي',
     de: 'Storniert',
-    tone: 'text-red-700 bg-red-50',
+    tone: 'text-red-400 bg-red-500/15',
   },
 };
 
@@ -87,17 +87,17 @@ const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, { ar: string; de: string;
   new: {
     ar: 'شكوى جديدة',
     de: 'Neu',
-    tone: 'text-[#FF8000] bg-[#FFF3E6]',
+    tone: 'text-[#FF8000] bg-[#FF8000]/15',
   },
   reviewed: {
     ar: 'قيد المراجعة',
     de: 'In Bearbeitung',
-    tone: 'text-[#2563EB] bg-[#EFF6FF]',
+    tone: 'text-[#60A5FA] bg-[#2563EB]/20',
   },
   resolved: {
     ar: 'تمت المعالجة',
     de: 'Gelöst',
-    tone: 'text-[#16A34A] bg-[#ECFDF3]',
+    tone: 'text-[#4ADE80] bg-[#22C55E]/15',
   },
 };
 
@@ -531,8 +531,8 @@ export function AdminDashboard({
 
   if (vaultChecking) {
     return (
-      <div className="min-h-screen bg-[#F8F5F2] flex items-center justify-center p-6">
-        <p className="text-[14px] font-bold text-[#5A6568]">
+      <div className="min-h-screen bg-[#0B0D0F] flex items-center justify-center p-6">
+        <p className="text-[14px] font-bold text-[#A3ACB3]">
           {lang === 'ar' ? 'جاري تجهيز لوحة التابلت...' : 'Tablet-Empfang wird geladen...'}
         </p>
       </div>
@@ -542,26 +542,28 @@ export function AdminDashboard({
   // PIN Lock / First-Time PIN Setup Screen (Works 100% Free on Vercel / Tablet PWA)
   if (!credentials) {
     return (
-      <div className="min-h-screen bg-[#F8F5F2] flex flex-col">
-        <header className="bg-white border-b border-[#EAE5DF]">
+      <div className="min-h-screen bg-[#0B0D0F] text-[#F4F5F6] flex flex-col">
+        <header className="bg-[#14171A] border-b border-[#262B31]">
           <div className="max-w-[1100px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-            <img
-              src={KAIROS_ASSETS.logoBanner}
-              alt="Kairos Grill Admin"
-              className="h-10 w-auto object-contain"
-            />
+            <div className="bg-white rounded-[10px] px-2.5 py-1 inline-flex items-center">
+              <img
+                src={KAIROS_ASSETS.logoBanner}
+                alt="Kairos Grill Admin"
+                className="h-9 w-auto object-contain"
+              />
+            </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => onChangeLang(lang === 'ar' ? 'de' : 'ar')}
-                className="h-10 px-3 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] text-[12px] font-bold text-[#242E30]"
+                className="h-10 px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] font-bold text-[#F4F5F6] transition-colors"
               >
                 {lang === 'ar' ? 'DE' : 'AR'}
               </button>
               <button
                 type="button"
                 onClick={onExitAdmin}
-                className="h-10 px-4 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[13px] font-bold text-[#242E30] inline-flex items-center gap-1.5"
+                className="h-10 px-4 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[13px] font-bold text-[#F4F5F6] inline-flex items-center gap-1.5 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>{lang === 'ar' ? 'العودة للمنيو' : 'Zur Speisekarte'}</span>
@@ -571,14 +573,14 @@ export function AdminDashboard({
         </header>
 
         <main className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-[16px] border border-[#EAE5DF] shadow-[0_12px_32px_rgba(36,46,48,0.08)] p-6 sm:p-8 space-y-5">
+          <div className="max-w-md w-full bg-[#14171A] rounded-[16px] border border-[#262B31] shadow-[0_12px_32px_rgba(0,0,0,0.45)] p-6 sm:p-8 space-y-5">
             <div className="text-center space-y-2">
               <img
                 src="/pwa-192x192.png"
                 alt="Kairos Grill Tablet"
                 className="w-20 h-20 mx-auto object-contain"
               />
-              <h1 className="font-display text-[22px] font-extrabold text-[#242E30]">
+              <h1 className="font-display text-[22px] font-extrabold text-[#F4F5F6]">
                 {vaultExists
                   ? lang === 'ar'
                     ? 'استقبال طلبات المطعم (التابلت)'
@@ -587,7 +589,7 @@ export function AdminDashboard({
                     ? 'إعداد الرقم السري للتابلت (أول مرة)'
                     : 'Erste Einrichtung: Admin-PIN wählen'}
               </h1>
-              <p className="text-[13px] text-[#5A6568] leading-relaxed">
+              <p className="text-[13px] text-[#A3ACB3] leading-relaxed">
                 {vaultExists
                   ? lang === 'ar'
                     ? 'أدخل الرقم السري الخاص بصاحب المطعم لفتح شاشة استقبال الطلبات المباشرة على التابلت.'
@@ -600,7 +602,7 @@ export function AdminDashboard({
 
             <form onSubmit={handlePinSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-[12px] font-bold text-[#242E30] mb-1">
+                <label className="block text-[12px] font-bold text-[#F4F5F6] mb-1">
                   {vaultExists
                     ? lang === 'ar'
                       ? 'الرقم السري (PIN)'
@@ -619,18 +621,18 @@ export function AdminDashboard({
                     onChange={(e) => setPinInput(e.target.value)}
                     placeholder="••••••"
                     dir="ltr"
-                    className="w-full h-11 pl-10 pr-4 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[16px] font-bold tracking-widest"
+                    className="w-full h-11 pl-10 pr-4 rounded-[12px] bg-[#1C2024] border border-[#262B31] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:border-[#FF8000] focus:bg-[#23282D] focus:outline-none text-[16px] font-bold tracking-widest"
                   />
                 </div>
               </div>
 
               {!vaultExists && (
                 <div>
-                  <label className="block text-[12px] font-bold text-[#242E30] mb-1">
+                  <label className="block text-[12px] font-bold text-[#F4F5F6] mb-1">
                     {lang === 'ar' ? 'تأكيد الرقم السري' : 'Admin-PIN bestätigen'}
                   </label>
                   <div className="relative">
-                    <ShieldCheck className="w-4 h-4 text-[#16A34A] absolute top-3.5 left-3.5 pointer-events-none" />
+                    <ShieldCheck className="w-4 h-4 text-[#4ADE80] absolute top-3.5 left-3.5 pointer-events-none" />
                     <input
                       type="password"
                       inputMode="numeric"
@@ -639,13 +641,13 @@ export function AdminDashboard({
                       onChange={(e) => setPinConfirm(e.target.value)}
                       placeholder="••••••"
                       dir="ltr"
-                      className="w-full h-11 pl-10 pr-4 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[16px] font-bold tracking-widest"
+                      className="w-full h-11 pl-10 pr-4 rounded-[12px] bg-[#1C2024] border border-[#262B31] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:border-[#FF8000] focus:bg-[#23282D] focus:outline-none text-[16px] font-bold tracking-widest"
                     />
                   </div>
                 </div>
               )}
 
-              <label className="flex items-center gap-2 text-[12px] text-[#5A6568] cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-[12px] text-[#A3ACB3] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={rememberTablet}
@@ -660,7 +662,7 @@ export function AdminDashboard({
               </label>
 
               {pinError && (
-                <p className="p-3 rounded-[10px] bg-red-50 border border-red-200 text-[12px] font-semibold text-red-700">
+                <p className="p-3 rounded-[10px] bg-red-500/15 border border-red-500/35 text-[12px] font-semibold text-red-400">
                   {pinError}
                 </p>
               )}
@@ -691,7 +693,7 @@ export function AdminDashboard({
 
   // Unlocked Shop Tablet Live Orders & Complaints Dashboard
   return (
-    <div className="min-h-screen bg-[#F8F5F2] text-[#242E30] flex flex-col">
+    <div className="min-h-screen bg-[#0B0D0F] text-[#F4F5F6] flex flex-col">
       {/* Print-Only Kitchen Ticket */}
       {printOrder && (
         <div className="hidden print:block p-6 bg-white text-black font-sans text-[13px] max-w-md mx-auto">
@@ -724,7 +726,7 @@ export function AdminDashboard({
       )}
 
       {/* Top Tablet Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-[#EAE5DF] print:hidden">
+      <header className="sticky top-0 z-40 bg-[#14171A] border-b border-[#262B31] print:hidden">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <img
@@ -733,10 +735,10 @@ export function AdminDashboard({
               className="w-10 h-10 object-contain shrink-0"
             />
             <div>
-              <h1 className="font-display text-[16px] sm:text-[18px] font-extrabold text-[#242E30]">
+              <h1 className="font-display text-[16px] sm:text-[18px] font-extrabold text-[#F4F5F6]">
                 {lang === 'ar' ? 'تابلت استقبال طلبات Kairos Grill' : 'Kairos Grill Bestell-Tablet'}
               </h1>
-              <p className="text-[11px] text-[#5A6568] tabular-nums">
+              <p className="text-[11px] text-[#A3ACB3] tabular-nums">
                 {pendingCount > 0
                   ? lang === 'ar'
                     ? `${pendingCount} طلب جديد بانتظار القبول`
@@ -760,8 +762,8 @@ export function AdminDashboard({
               }}
               className={`h-10 px-3.5 rounded-[12px] text-[12px] font-bold inline-flex items-center gap-1.5 border transition-colors ${
                 soundEnabled
-                  ? 'bg-[#ECFDF3] border-[#16A34A]/30 text-[#16A34A]'
-                  : 'bg-[#F8F5F2] border-[#EAE5DF] text-[#5A6568]'
+                  ? 'bg-[#22C55E]/15 border-[#22C55E]/35 text-[#4ADE80]'
+                  : 'bg-[#1C2024] border-[#262B31] text-[#A3ACB3]'
               }`}
             >
               {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
@@ -782,8 +784,8 @@ export function AdminDashboard({
                 onClick={() => setRepeatRingPending((v) => !v)}
                 className={`h-10 px-3 rounded-[12px] text-[12px] font-bold border transition-colors ${
                   repeatRingPending
-                    ? 'bg-[#FFF3E6] border-[#FF8000]/40 text-[#FF8000]'
-                    : 'bg-[#F8F5F2] border-[#EAE5DF] text-[#5A6568]'
+                    ? 'bg-[#FF8000]/15 border-[#FF8000]/40 text-[#FF8000]'
+                    : 'bg-[#1C2024] border-[#262B31] text-[#A3ACB3]'
                 }`}
               >
                 {repeatRingPending
@@ -804,8 +806,8 @@ export function AdminDashboard({
               }}
               className={`h-10 px-3 rounded-[12px] border text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors ${
                 showPinRotate
-                  ? 'bg-[#FFF3E6] border-[#FF8000]/40 text-[#FF8000]'
-                  : 'bg-[#F8F5F2] hover:bg-[#EAE5DF] border-[#EAE5DF] text-[#242E30]'
+                  ? 'bg-[#FF8000]/15 border-[#FF8000]/40 text-[#FF8000]'
+                  : 'bg-[#1C2024] hover:bg-[#23282D] border-[#262B31] text-[#F4F5F6]'
               }`}
             >
               <KeyRound className="w-3.5 h-3.5 text-[#FF8000]" />
@@ -815,7 +817,7 @@ export function AdminDashboard({
             <button
               type="button"
               onClick={onExitAdmin}
-              className="h-10 px-3.5 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] border border-[#EAE5DF] text-[12px] font-bold text-[#242E30]"
+              className="h-10 px-3.5 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] font-bold text-[#F4F5F6] transition-colors"
             >
               {lang === 'ar' ? 'عرض المنيو' : 'Speisekarte'}
             </button>
@@ -823,7 +825,7 @@ export function AdminDashboard({
             <button
               type="button"
               onClick={() => onChangeLang(lang === 'ar' ? 'de' : 'ar')}
-              className="h-10 px-3 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] text-[12px] font-bold text-[#242E30]"
+              className="h-10 px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] font-bold text-[#F4F5F6] transition-colors"
             >
               {lang === 'ar' ? 'DE' : 'AR'}
             </button>
@@ -832,7 +834,7 @@ export function AdminDashboard({
               type="button"
               onClick={handleLockTablet}
               aria-label="Lock tablet"
-              className="h-10 px-3 rounded-[12px] bg-[#F8F5F2] hover:bg-red-50 border border-[#EAE5DF] text-[12px] font-bold text-[#5A6568] hover:text-red-700 inline-flex items-center gap-1.5"
+              className="h-10 px-3 rounded-[12px] bg-[#1C2024] hover:bg-red-500/15 border border-[#262B31] hover:border-red-500/35 text-[12px] font-bold text-[#A3ACB3] hover:text-red-400 inline-flex items-center gap-1.5 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">{lang === 'ar' ? 'قفل' : 'Sperren'}</span>
@@ -847,10 +849,10 @@ export function AdminDashboard({
         {showPinRotate && (
           <form
             onSubmit={handleRotatePin}
-            className="bg-white rounded-[16px] border border-[#FF8000]/40 p-4 flex flex-wrap items-end gap-3 shadow-xs"
+            className="bg-[#14171A] rounded-[16px] border border-[#FF8000]/40 p-4 flex flex-wrap items-end gap-3"
           >
             <div className="flex-1 min-w-[160px]">
-              <label className="block text-[11px] font-bold text-[#242E30] mb-1">
+              <label className="block text-[11px] font-bold text-[#F4F5F6] mb-1">
                 {lang === 'ar' ? 'الرقم السري الجديد' : 'Neue Admin-PIN'}
               </label>
               <input
@@ -860,11 +862,11 @@ export function AdminDashboard({
                 onChange={(e) => setNewPin(e.target.value)}
                 placeholder="••••••"
                 dir="ltr"
-                className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px]"
+                className="w-full h-10 px-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[13px] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:outline-none focus:border-[#FF8000]"
               />
             </div>
             <div className="flex-1 min-w-[160px]">
-              <label className="block text-[11px] font-bold text-[#242E30] mb-1">
+              <label className="block text-[11px] font-bold text-[#F4F5F6] mb-1">
                 {lang === 'ar' ? 'تأكيد الرقم الجديد' : 'Neue PIN bestätigen'}
               </label>
               <input
@@ -874,14 +876,14 @@ export function AdminDashboard({
                 onChange={(e) => setNewPinConfirm(e.target.value)}
                 placeholder="••••••"
                 dir="ltr"
-                className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px]"
+                className="w-full h-10 px-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[13px] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:outline-none focus:border-[#FF8000]"
               />
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="submit"
                 disabled={isRotatingPin}
-                className="h-10 px-4 rounded-[10px] bg-[#FF8000] hover:bg-[#E67300] disabled:opacity-60 text-white text-[12px] font-bold"
+                className="h-10 px-4 rounded-[10px] bg-[#FF8000] hover:bg-[#E67300] disabled:opacity-60 text-white text-[12px] font-bold transition-colors"
               >
                 {isRotatingPin
                   ? lang === 'ar'
@@ -897,7 +899,7 @@ export function AdminDashboard({
                   setShowPinRotate(false);
                   setPinRotateStatus(null);
                 }}
-                className="h-10 px-3 rounded-[10px] bg-[#F8F5F2] hover:bg-[#EAE5DF] border border-[#EAE5DF] text-[#242E30] text-[12px] font-bold"
+                className="h-10 px-3 rounded-[10px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[#F4F5F6] text-[12px] font-bold transition-colors"
               >
                 {lang === 'ar' ? 'إغلاق' : 'Schließen'}
               </button>
@@ -905,7 +907,7 @@ export function AdminDashboard({
             {pinRotateStatus && (
               <p
                 className={`w-full text-[12px] font-bold ${
-                  pinRotateStatus.isError ? 'text-red-600' : 'text-[#16A34A]'
+                  pinRotateStatus.isError ? 'text-red-400' : 'text-[#4ADE80]'
                 }`}
               >
                 {pinRotateStatus.text}
@@ -915,7 +917,7 @@ export function AdminDashboard({
         )}
 
         {syncError && (
-          <div className="p-4 rounded-[12px] bg-red-50 border border-red-200 text-red-800 text-[13px] font-semibold">
+          <div className="p-4 rounded-[12px] bg-red-500/15 border border-red-500/35 text-red-400 text-[13px] font-semibold">
             {lang === 'ar'
               ? 'تعذر الاتصال بقائمة الطلبات حالياً. تحقق من الاتصال بالإنترنت وأعد تحميل الصفحة.'
               : 'Verbindung zur Bestellliste fehlgeschlagen. Bitte Internetverbindung prüfen und neu laden.'}
@@ -923,7 +925,7 @@ export function AdminDashboard({
         )}
 
         {actionNotice && (
-          <div className="p-3.5 rounded-[12px] bg-[#ECFDF3] border border-[#16A34A]/30 text-[#15803D] text-[13px] font-bold flex items-center justify-between gap-2">
+          <div className="p-3.5 rounded-[12px] bg-[#22C55E]/15 border border-[#22C55E]/35 text-[#4ADE80] text-[13px] font-bold flex items-center justify-between gap-2">
             <span>{actionNotice}</span>
             <button
               type="button"
@@ -936,14 +938,14 @@ export function AdminDashboard({
         )}
 
         {/* Primary Section Switcher: Orders vs Complaints */}
-        <div className="flex flex-wrap items-center gap-2.5 border-b border-[#EAE5DF] pb-4">
+        <div className="flex flex-wrap items-center gap-2.5 border-b border-[#262B31] pb-4">
           <button
             type="button"
             onClick={() => setActiveTab('orders')}
             className={`h-11 px-5 rounded-[12px] font-display text-[13px] font-bold inline-flex items-center gap-2 transition-colors ${
               activeTab === 'orders'
                 ? 'bg-[#FF8000] text-white shadow-[0_6px_16px_rgba(255,128,0,0.25)]'
-                : 'bg-white border border-[#EAE5DF] text-[#242E30] hover:bg-[#FFF3E6]'
+                : 'bg-[#14171A] border border-[#262B31] text-[#F4F5F6] hover:bg-[#1C2024]'
             }`}
           >
             <ChefHat className="w-4 h-4" />
@@ -951,7 +953,7 @@ export function AdminDashboard({
               {lang === 'ar' ? `الطلبات المباشرة (${orders.length})` : `Bestellungen (${orders.length})`}
             </span>
             {pendingCount > 0 && (
-              <span className="px-2 py-0.5 rounded-[8px] text-[11px] font-extrabold bg-white text-[#FF8000] tabular-nums">
+              <span className="px-2 py-0.5 rounded-[8px] text-[11px] font-extrabold bg-[#0B0D0F] text-[#FF8000] tabular-nums">
                 {pendingCount}
               </span>
             )}
@@ -962,8 +964,8 @@ export function AdminDashboard({
             onClick={() => setActiveTab('complaints')}
             className={`h-11 px-5 rounded-[12px] font-display text-[13px] font-bold inline-flex items-center gap-2 transition-colors ${
               activeTab === 'complaints'
-                ? 'bg-[#242E30] text-white shadow-[0_6px_16px_rgba(36,46,48,0.18)]'
-                : 'bg-white border border-[#EAE5DF] text-[#242E30] hover:bg-[#F8F5F2]'
+                ? 'bg-[#262B31] text-[#F4F5F6] border border-[#FF8000]/40'
+                : 'bg-[#14171A] border border-[#262B31] text-[#F4F5F6] hover:bg-[#1C2024]'
             }`}
           >
             <MessageSquareWarning className="w-4 h-4" />
@@ -999,8 +1001,8 @@ export function AdminDashboard({
                   onClick={() => setOrderFilter(tab.id)}
                   className={`h-10 px-4 rounded-[12px] text-[12px] font-bold whitespace-nowrap shrink-0 transition-colors ${
                     orderFilter === tab.id
-                      ? 'bg-[#242E30] text-white'
-                      : 'bg-white border border-[#EAE5DF] text-[#5A6568] hover:text-[#242E30]'
+                      ? 'bg-[#FF8000] text-white'
+                      : 'bg-[#14171A] border border-[#262B31] text-[#A3ACB3] hover:text-[#F4F5F6] hover:bg-[#1C2024]'
                   }`}
                 >
                   {lang === 'ar' ? tab.ar : tab.de}
@@ -1009,12 +1011,12 @@ export function AdminDashboard({
             </div>
 
             {filteredOrders.length === 0 ? (
-              <div className="bg-white rounded-[16px] border border-[#EAE5DF] p-10 text-center space-y-2">
+              <div className="bg-[#14171A] rounded-[16px] border border-[#262B31] p-10 text-center space-y-2">
                 <ChefHat className="w-9 h-9 text-[#FF8000] mx-auto" />
-                <p className="font-display text-[17px] font-bold text-[#242E30]">
+                <p className="font-display text-[17px] font-bold text-[#F4F5F6]">
                   {lang === 'ar' ? 'لا توجد طلبات في هذا القسم حالياً' : 'Keine Bestellungen vorhanden'}
                 </p>
-                <p className="text-[13px] text-[#5A6568]">
+                <p className="text-[13px] text-[#A3ACB3]">
                   {lang === 'ar'
                     ? 'بمجرد أن يطلب أي زبون من الموقع سيصل الطلب والفاتورة على هذا التابلت فوراً مع جرس تنبيه.'
                     : 'Sobald ein Kunde bestellt, erscheint die Bestellung hier sofort mit akustischem Signal.'}
@@ -1037,15 +1039,15 @@ export function AdminDashboard({
                   return (
                     <article
                       key={order.id}
-                      className={`bg-white rounded-[16px] border p-5 shadow-[0_4px_16px_rgba(36,46,48,0.05)] flex flex-col justify-between gap-4 ${
-                        order.status === 'pending' ? 'border-[#FF8000] ring-2 ring-[#FF8000]/20' : 'border-[#EAE5DF]'
+                      className={`bg-[#14171A] rounded-[16px] border p-5 shadow-[0_8px_24px_rgba(0,0,0,0.35)] flex flex-col justify-between gap-4 ${
+                        order.status === 'pending' ? 'border-[#FF8000] ring-2 ring-[#FF8000]/25' : 'border-[#262B31]'
                       }`}
                     >
                       <div className="space-y-4">
-                        <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#EAE5DF]">
+                        <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#262B31]">
                           <div>
-                            <div className="flex items-center gap-2 text-[12px] text-[#5A6568] tabular-nums">
-                              <span className="font-extrabold text-[#242E30] text-[16px]">
+                            <div className="flex items-center gap-2 text-[12px] text-[#A3ACB3] tabular-nums">
+                              <span className="font-extrabold text-[#F4F5F6] text-[16px]">
                                 #{order.orderNumber}
                               </span>
                               {createdStr && (
@@ -1066,7 +1068,7 @@ export function AdminDashboard({
                             <p className="font-display text-[20px] font-extrabold text-[#FF8000] tabular-nums">
                               {formatEuro(order.total)}
                             </p>
-                            <p className="text-[11px] font-semibold text-[#5A6568]">
+                            <p className="text-[11px] font-semibold text-[#A3ACB3]">
                               {order.paymentMethod === 'payment_link'
                                 ? lang === 'ar'
                                   ? 'رابط دفع إلكتروني'
@@ -1078,9 +1080,9 @@ export function AdminDashboard({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px] bg-[#F8F5F2] rounded-[12px] p-3.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px] bg-[#1C2024] border border-[#262B31] rounded-[12px] p-3.5">
                           <div className="space-y-1">
-                            <p className="font-bold text-[#242E30]">{order.customerName}</p>
+                            <p className="font-bold text-[#F4F5F6]">{order.customerName}</p>
                             <a
                               href={`tel:${order.customerPhone}`}
                               className="inline-flex items-center gap-1.5 text-[#FF8000] font-bold tabular-nums hover:underline"
@@ -1091,7 +1093,7 @@ export function AdminDashboard({
                           </div>
 
                           <div className="space-y-1">
-                            <p className="font-semibold text-[#242E30] flex items-start gap-1.5">
+                            <p className="font-semibold text-[#F4F5F6] flex items-start gap-1.5">
                               <MapPin className="w-4 h-4 text-[#FF8000] shrink-0 mt-0.5" />
                               <span>{order.address}</span>
                             </p>
@@ -1104,7 +1106,7 @@ export function AdminDashboard({
                                 }
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] hover:underline"
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#60A5FA] hover:underline"
                               >
                                 <span>
                                   {order.gpsText
@@ -1127,25 +1129,25 @@ export function AdminDashboard({
                               key={`${order.id}-item-${idx}`}
                               className="flex items-start justify-between gap-2 text-[13px]"
                             >
-                              <span className="text-[#242E30] font-medium">
+                              <span className="text-[#F4F5F6] font-medium">
                                 <strong className="text-[#FF8000] tabular-nums">{item.qty}×</strong>{' '}
                                 {item.itemNumber ? `#${item.itemNumber} ` : ''}
                                 {lang === 'ar' ? item.nameAr : item.nameDe}
                                 {item.variantLabel ? ` (${item.variantLabel})` : ''}
                               </span>
-                              <span className="font-bold text-[#242E30] tabular-nums shrink-0">
+                              <span className="font-bold text-[#F4F5F6] tabular-nums shrink-0">
                                 {formatEuro(item.unitPrice * item.qty)}
                               </span>
                             </div>
                           ))}
 
                           {order.notes && (
-                            <p className="mt-2 pt-2 border-t border-[#EAE5DF] text-[12px] font-semibold text-[#FF8000]">
+                            <p className="mt-2 pt-2 border-t border-[#262B31] text-[12px] font-semibold text-[#FF8000]">
                               {lang === 'ar' ? 'ملاحظات الزبون:' : 'Hinweis:'} {order.notes}
                             </p>
                           )}
 
-                          <div className="pt-2 border-t border-[#EAE5DF] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#5A6568] tabular-nums">
+                          <div className="pt-2 border-t border-[#262B31] flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#A3ACB3] tabular-nums">
                             <span>{lang === 'ar' ? 'صافي:' : 'Netto:'} {formatEuro(order.subtotal)}</span>
                             {order.foodTax > 0 && <span>7%: +{formatEuro(order.foodTax)}</span>}
                             {order.drinksTax > 0 && <span>19%: +{formatEuro(order.drinksTax)}</span>}
@@ -1154,7 +1156,7 @@ export function AdminDashboard({
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-[#EAE5DF] flex flex-wrap gap-2">
+                      <div className="pt-3 border-t border-[#262B31] flex flex-wrap gap-2">
                         {order.status === 'pending' && (
                           <button
                             type="button"
@@ -1198,7 +1200,7 @@ export function AdminDashboard({
                             type="button"
                             disabled={isUpdating}
                             onClick={() => handleOrderStatusChange(order, 'completed')}
-                            className="h-11 px-4 rounded-[12px] bg-[#242E30] hover:bg-[#354245] disabled:opacity-60 text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors"
+                            className="h-11 px-4 rounded-[12px] bg-[#262B31] hover:bg-[#323840] disabled:opacity-60 text-[#F4F5F6] text-[12px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors"
                           >
                             <Check className="w-4 h-4" />
                             <span>{lang === 'ar' ? 'تم التسليم' : 'Fertig'}</span>
@@ -1210,7 +1212,7 @@ export function AdminDashboard({
                             type="button"
                             disabled={isUpdating}
                             onClick={() => handleOrderStatusChange(order, 'cancelled')}
-                            className="h-11 px-3.5 rounded-[12px] bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                            className="h-11 px-3.5 rounded-[12px] bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/35 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
                           >
                             <XCircle className="w-4 h-4" />
                             <span>{lang === 'ar' ? 'إلغاء' : 'Stornieren'}</span>
@@ -1222,7 +1224,7 @@ export function AdminDashboard({
                             type="button"
                             disabled={isUpdating}
                             onClick={() => handleDeleteOrderFromList(order)}
-                            className="h-11 px-3.5 rounded-[12px] bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-700 border border-red-200 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                            className="h-11 px-3.5 rounded-[12px] bg-red-500/15 hover:bg-red-500/25 disabled:opacity-60 text-red-400 border border-red-500/35 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                             <span>{lang === 'ar' ? 'حذف من القائمة' : 'Aus Liste löschen'}</span>
@@ -1242,7 +1244,7 @@ export function AdminDashboard({
                               type="button"
                               disabled={isUpdating}
                               onClick={() => setConfirmDeleteOrderId(null)}
-                              className="h-11 px-3 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] border border-[#EAE5DF] text-[12px] font-bold transition-colors"
+                              className="h-11 px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] text-[#F4F5F6] border border-[#262B31] text-[12px] font-bold transition-colors"
                             >
                               {lang === 'ar' ? 'تراجع' : 'Abbrechen'}
                             </button>
@@ -1252,7 +1254,7 @@ export function AdminDashboard({
                             type="button"
                             disabled={isUpdating}
                             onClick={() => setConfirmDeleteOrderId(order.id)}
-                            className="h-11 px-3.5 rounded-[12px] bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-700 border border-red-200 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                            className="h-11 px-3.5 rounded-[12px] bg-red-500/15 hover:bg-red-500/25 disabled:opacity-60 text-red-400 border border-red-500/35 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                             <span>{lang === 'ar' ? 'حذف من القائمة' : 'Aus Liste löschen'}</span>
@@ -1262,7 +1264,7 @@ export function AdminDashboard({
                         <button
                           type="button"
                           onClick={() => handlePrintOrder(order)}
-                          className="h-11 px-3.5 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] border border-[#EAE5DF] text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                          className="h-11 px-3.5 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] text-[#F4F5F6] border border-[#262B31] text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
                         >
                           <Printer className="w-4 h-4" />
                           <span>{lang === 'ar' ? 'طباعة' : 'Drucken'}</span>
@@ -1276,7 +1278,7 @@ export function AdminDashboard({
                           )}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="h-11 px-3.5 rounded-[12px] bg-[#ECFDF3] hover:bg-[#DCFCE7] text-[#16A34A] border border-[#16A34A]/25 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                          className="h-11 px-3.5 rounded-[12px] bg-[#22C55E]/15 hover:bg-[#22C55E]/25 text-[#4ADE80] border border-[#22C55E]/35 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
                         >
                           <MessageCircle className="w-4 h-4" />
                           <span>{lang === 'ar' ? 'واتساب للزبون' : 'WhatsApp'}</span>
@@ -1292,12 +1294,12 @@ export function AdminDashboard({
           /* Complaints Management Section */
           <div className="space-y-4">
             {complaints.length === 0 ? (
-              <div className="bg-white rounded-[16px] border border-[#EAE5DF] p-10 text-center space-y-2">
+              <div className="bg-[#14171A] rounded-[16px] border border-[#262B31] p-10 text-center space-y-2">
                 <MessageSquareWarning className="w-9 h-9 text-[#FF8000] mx-auto" />
-                <p className="font-display text-[17px] font-bold text-[#242E30]">
+                <p className="font-display text-[17px] font-bold text-[#F4F5F6]">
                   {lang === 'ar' ? 'لا توجد شكاوي أو ملاحظات حالياً' : 'Keine Beschwerden vorhanden'}
                 </p>
-                <p className="text-[13px] text-[#5A6568]">
+                <p className="text-[13px] text-[#A3ACB3]">
                   {lang === 'ar'
                     ? 'أي شكوى يرسلها الزبون من قسم «الإدارة» ستظهر هنا فوراً للمتابعة.'
                     : 'Sobald ein Kunde eine Meldung einreicht, erscheint sie hier.'}
@@ -1321,14 +1323,14 @@ export function AdminDashboard({
                   return (
                     <article
                       key={c.id}
-                      className={`bg-white rounded-[16px] border p-5 space-y-3.5 ${
-                        c.status === 'new' ? 'border-[#FF8000]' : 'border-[#EAE5DF]'
+                      className={`bg-[#14171A] rounded-[16px] border p-5 space-y-3.5 ${
+                        c.status === 'new' ? 'border-[#FF8000]' : 'border-[#262B31]'
                       }`}
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#EAE5DF]">
+                      <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#262B31]">
                         <div>
-                          <div className="flex items-center gap-2 text-[12px] text-[#5A6568] tabular-nums">
-                            <span className="font-extrabold text-[#242E30] text-[15px]">
+                          <div className="flex items-center gap-2 text-[12px] text-[#A3ACB3] tabular-nums">
+                            <span className="font-extrabold text-[#F4F5F6] text-[15px]">
                               #{c.complaintNumber}
                             </span>
                             {createdStr && (
@@ -1350,8 +1352,8 @@ export function AdminDashboard({
                         </span>
                       </div>
 
-                      <div className="bg-[#F8F5F2] rounded-[12px] p-3.5 space-y-1 text-[13px]">
-                        <p className="font-bold text-[#242E30]">{c.customerName}</p>
+                      <div className="bg-[#1C2024] border border-[#262B31] rounded-[12px] p-3.5 space-y-1 text-[13px]">
+                        <p className="font-bold text-[#F4F5F6]">{c.customerName}</p>
                         {c.customerPhone && (
                           <a
                             href={`tel:${c.customerPhone}`}
@@ -1362,13 +1364,13 @@ export function AdminDashboard({
                           </a>
                         )}
                         {c.orderNumber && (
-                          <p className="text-[12px] text-[#5A6568]">
+                          <p className="text-[12px] text-[#A3ACB3]">
                             {lang === 'ar' ? 'رقم الطلب:' : 'Bestell-Nr.:'} #{c.orderNumber}
                           </p>
                         )}
                       </div>
 
-                      <p className="text-[13px] text-[#242E30] leading-relaxed bg-white border border-[#EAE5DF] rounded-[10px] p-3">
+                      <p className="text-[13px] text-[#F4F5F6] leading-relaxed bg-[#1C2024] border border-[#262B31] rounded-[10px] p-3">
                         {c.message}
                       </p>
 
@@ -1385,7 +1387,7 @@ export function AdminDashboard({
                               ? 'ملاحظة الإدارة الداخلية (اختياري)...'
                               : 'Interne Notiz (optional)...'
                           }
-                          className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[12px] text-[#242E30] focus:outline-none focus:border-[#FF8000]"
+                          className="w-full h-10 px-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[12px] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:outline-none focus:border-[#FF8000]"
                         />
 
                         <div className="flex flex-wrap gap-2">

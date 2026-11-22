@@ -92,12 +92,12 @@ export function CustomerOrderTracker({
       className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-5"
     >
       <div
-        className={`rounded-[14px] border p-4 sm:p-5 bg-white shadow-[0_6px_22px_rgba(36,46,48,0.06)] ${
+        className={`rounded-[14px] border p-4 sm:p-5 bg-[#14171A] shadow-[0_8px_24px_rgba(0,0,0,0.4)] ${
           tracking.status === 'accepted' || tracking.status === 'preparing'
-            ? 'border-[#16A34A]/50'
+            ? 'border-[#22C55E]/45'
             : isCancelled
-              ? 'border-red-300'
-              : 'border-[#FF8000]/40'
+              ? 'border-red-500/45'
+              : 'border-[#FF8000]/45'
         }`}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -105,10 +105,10 @@ export function CustomerOrderTracker({
             <div
               className={`w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 ${
                 tracking.status === 'pending'
-                  ? 'bg-[#FFF3E6] text-[#FF8000]'
+                  ? 'bg-[#FF8000]/15 text-[#FF8000]'
                   : isCancelled
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-[#ECFDF3] text-[#16A34A]'
+                    ? 'bg-red-500/15 text-red-400'
+                    : 'bg-[#22C55E]/15 text-[#4ADE80]'
               }`}
             >
               {tracking.status === 'pending' ? (
@@ -125,12 +125,12 @@ export function CustomerOrderTracker({
             </div>
 
             <div>
-              <div className="flex flex-wrap items-center gap-2 text-[12px] font-bold text-[#5A6568] tabular-nums">
+              <div className="flex flex-wrap items-center gap-2 text-[12px] font-bold text-[#A3ACB3] tabular-nums">
                 <span className="text-[#FF8000]">#{tracking.orderNumber}</span>
                 <span aria-hidden="true">·</span>
                 <span>{formatEuro(tracking.total)}</span>
               </div>
-              <h2 className="font-display text-[16px] sm:text-[18px] font-extrabold text-[#242E30] mt-0.5">
+              <h2 className="font-display text-[16px] sm:text-[18px] font-extrabold text-[#F4F5F6] mt-0.5">
                 {lang === 'ar' ? tracking.statusMessageAr : tracking.statusMessageDe}
               </h2>
             </div>
@@ -141,7 +141,7 @@ export function CustomerOrderTracker({
               <button
                 type="button"
                 onClick={handleRequestNotifications}
-                className="h-9 px-3 rounded-[10px] bg-[#FFF3E6] hover:bg-[#FF8000] text-[#FF8000] hover:text-white text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                className="h-9 px-3 rounded-[10px] bg-[#FF8000]/15 hover:bg-[#FF8000] text-[#FF8000] hover:text-white border border-[#FF8000]/30 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
               >
                 <Bell className="w-3.5 h-3.5" />
                 <span>
@@ -155,7 +155,7 @@ export function CustomerOrderTracker({
                 type="button"
                 onClick={onDismiss}
                 aria-label="Dismiss order tracker"
-                className="w-9 h-9 rounded-[10px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#5A6568] flex items-center justify-center"
+                className="w-9 h-9 rounded-[10px] bg-[#1C2024] hover:bg-[#262B31] text-[#A3ACB3] hover:text-[#F4F5F6] flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -172,12 +172,12 @@ export function CustomerOrderTracker({
                 <div key={step.key} className="space-y-1.5">
                   <div
                     className={`h-1.5 rounded-full transition-colors ${
-                      reached ? 'bg-[#16A34A]' : 'bg-[#EAE5DF]'
+                      reached ? 'bg-[#22C55E]' : 'bg-[#262B31]'
                     }`}
                   />
                   <p
                     className={`text-[11px] font-bold truncate ${
-                      reached ? 'text-[#242E30]' : 'text-[#5A6568]/70'
+                      reached ? 'text-[#F4F5F6]' : 'text-[#A3ACB3]/70'
                     }`}
                   >
                     {lang === 'ar' ? step.labelAr : step.labelDe}

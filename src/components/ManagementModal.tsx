@@ -81,26 +81,26 @@ export function ManagementModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#242E30]/60 backdrop-blur-xs p-3 sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="management-modal-title"
     >
-      <div className="w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] bg-white rounded-[16px] shadow-2xl border border-[#EAE5DF] overflow-hidden flex flex-col">
+      <div className="w-full max-w-lg max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] bg-[#14171A] rounded-[16px] shadow-2xl border border-[#262B31] overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-[#EAE5DF] flex items-center justify-between gap-3 bg-[#F8F5F2]/70 shrink-0">
+        <div className="px-5 py-4 border-b border-[#262B31] flex items-center justify-between gap-3 bg-[#1C2024]/70 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-[10px] bg-[#FFF3E6] text-[#FF8000] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-[10px] bg-[#FF8000]/15 text-[#FF8000] flex items-center justify-center shrink-0">
               <MessageSquareWarning className="w-5 h-5" />
             </div>
             <div>
               <h2
                 id="management-modal-title"
-                className="font-display text-[17px] font-extrabold text-[#242E30]"
+                className="font-display text-[17px] font-extrabold text-[#F4F5F6]"
               >
                 {lang === 'ar' ? 'الإدارة والشكاوي' : 'Verwaltung & Beschwerden'}
               </h2>
-              <p className="text-[12px] text-[#5A6568]">
+              <p className="text-[12px] text-[#A3ACB3]">
                 {lang === 'ar'
                   ? 'صوتك يصل مباشرة إلى إدارة مطعم Kairos Grill'
                   : 'Direkt an die Geschäftsleitung von Kairos Grill'}
@@ -112,7 +112,7 @@ export function ManagementModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[#5A6568] hover:bg-[#EAE5DF]/70 hover:text-[#242E30]"
+            className="w-9 h-9 rounded-[10px] flex items-center justify-center text-[#A3ACB3] hover:bg-[#23282D] hover:text-[#F4F5F6]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -122,14 +122,14 @@ export function ManagementModal({
           {/* Complaints Section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="font-display text-[15px] font-bold text-[#242E30]">
+              <h3 className="font-display text-[15px] font-bold text-[#F4F5F6]">
                 {lang === 'ar' ? 'قسم الشكاوي والملاحظات' : 'Beschwerde & Feedback einreichen'}
               </h3>
             </div>
 
             {submittedNumber ? (
-              <div className="p-4 rounded-[12px] bg-[#ECFDF3] border border-[#16A34A]/30 text-[#242E30] space-y-2">
-                <div className="flex items-center gap-2 text-[#16A34A] font-bold text-[14px]">
+              <div className="p-4 rounded-[12px] bg-[#22C55E]/15 border border-[#22C55E]/35 text-[#F4F5F6] space-y-2">
+                <div className="flex items-center gap-2 text-[#4ADE80] font-bold text-[14px]">
                   <CheckCircle2 className="w-5 h-5 shrink-0" />
                   <span>
                     {lang === 'ar'
@@ -137,7 +137,7 @@ export function ManagementModal({
                       : `Vielen Dank! Ihre Meldung (#${submittedNumber}) ist eingegangen.`}
                   </span>
                 </div>
-                <p className="text-[12px] text-[#5A6568]">
+                <p className="text-[12px] text-[#A3ACB3]">
                   {lang === 'ar'
                     ? 'ستقوم الإدارة بمراجعة ملاحظتك ومعالجتها في أقرب وقت.'
                     : 'Unsere Leitung wird sich schnellstmöglich darum kümmern.'}
@@ -154,7 +154,7 @@ export function ManagementModal({
               <form onSubmit={handleComplaintSubmit} className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[12px] font-bold text-[#242E30] mb-1">
+                    <label className="block text-[12px] font-bold text-[#F4F5F6] mb-1">
                       {lang === 'ar' ? 'الاسم *' : 'Name *'}
                     </label>
                     <input
@@ -164,11 +164,11 @@ export function ManagementModal({
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder={lang === 'ar' ? 'الاسم الكريم' : 'Ihr Name'}
-                      className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px] text-[#242E30] focus:outline-none focus:border-[#FF8000]"
+                      className="w-full h-10 px-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[13px] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:outline-none focus:border-[#FF8000]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[12px] font-bold text-[#242E30] mb-1">
+                    <label className="block text-[12px] font-bold text-[#F4F5F6] mb-1">
                       {lang === 'ar' ? 'رقم الهاتف (اختياري)' : 'Telefonnummer (optional)'}
                     </label>
                     <input
@@ -178,20 +178,20 @@ export function ManagementModal({
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="0176..."
                       dir="ltr"
-                      className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px] text-[#242E30] focus:outline-none focus:border-[#FF8000]"
+                      className="w-full h-10 px-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[13px] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:outline-none focus:border-[#FF8000]"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[12px] font-bold text-[#242E30] mb-1">
+                    <label className="block text-[12px] font-bold text-[#F4F5F6] mb-1">
                       {lang === 'ar' ? 'نوع الشكوى' : 'Kategorie'}
                     </label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as ComplaintCategory)}
-                      className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px] text-[#242E30] focus:outline-none focus:border-[#FF8000]"
+                      className="w-full h-10 px-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[13px] text-[#F4F5F6] focus:outline-none focus:border-[#FF8000]"
                     >
                       {COMPLAINT_CATEGORIES.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -201,7 +201,7 @@ export function ManagementModal({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[12px] font-bold text-[#242E30] mb-1">
+                    <label className="block text-[12px] font-bold text-[#F4F5F6] mb-1">
                       {lang === 'ar' ? 'رقم الطلب (اختياري)' : 'Bestellnummer (optional)'}
                     </label>
                     <input
@@ -211,13 +211,13 @@ export function ManagementModal({
                       onChange={(e) => setOrderNumber(e.target.value)}
                       placeholder="KG-..."
                       dir="ltr"
-                      className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px] text-[#242E30] focus:outline-none focus:border-[#FF8000]"
+                      className="w-full h-10 px-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[13px] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:outline-none focus:border-[#FF8000]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-bold text-[#242E30] mb-1">
+                  <label className="block text-[12px] font-bold text-[#F4F5F6] mb-1">
                     {lang === 'ar' ? 'تفاصيل الشكوى أو الملاحظة *' : 'Ihre Nachricht *'}
                   </label>
                   <textarea
@@ -232,12 +232,12 @@ export function ManagementModal({
                         ? 'اكتب تفاصيل شكواك أو ملاحظتك ليتم متابعتها من الإدارة...'
                         : 'Beschreiben Sie Ihr Anliegen...'
                     }
-                    className="w-full p-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px] text-[#242E30] focus:outline-none focus:border-[#FF8000] resize-none"
+                    className="w-full p-3 rounded-[10px] bg-[#1C2024] border border-[#262B31] text-[13px] text-[#F4F5F6] placeholder:text-[#A3ACB3]/60 focus:outline-none focus:border-[#FF8000] resize-none"
                   />
                 </div>
 
                 {submitError && (
-                  <p className="text-[12px] font-semibold text-red-600">{submitError}</p>
+                  <p className="text-[12px] font-semibold text-red-400">{submitError}</p>
                 )}
 
                 <button
@@ -261,14 +261,14 @@ export function ManagementModal({
           </section>
 
           {/* Direct Entry to PIN-Protected Restaurant Tablet Dashboard */}
-          <div className="pt-4 border-t border-[#EAE5DF]">
+          <div className="pt-4 border-t border-[#262B31]">
             <button
               type="button"
               onClick={() => {
                 onClose();
                 onOpenAdminDashboard();
               }}
-              className="w-full h-11 px-4 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] border border-[#EAE5DF] text-[#242E30] text-[13px] font-bold flex items-center justify-between transition-colors"
+              className="w-full h-11 px-4 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[#F4F5F6] text-[13px] font-bold flex items-center justify-between transition-colors"
             >
               <span className="inline-flex items-center gap-2">
                 <Tablet className="w-4 h-4 text-[#FF8000]" />
@@ -278,7 +278,7 @@ export function ManagementModal({
                     : 'Bestell-Tablet / Admin öffnen (mit PIN)'}
                 </span>
               </span>
-              <Lock className="w-3.5 h-3.5 text-[#5A6568]" />
+              <Lock className="w-3.5 h-3.5 text-[#A3ACB3]" />
             </button>
           </div>
         </div>
