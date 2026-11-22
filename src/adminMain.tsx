@@ -4,15 +4,10 @@ import { registerSW } from 'virtual:pwa-register';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import './hooks/usePWAInstall';
 import './index.css';
 
 registerSW({ immediate: true });
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-  });
-}
 
 function AdminApp() {
   const [lang, setLang] = useState<'ar' | 'de'>('de');

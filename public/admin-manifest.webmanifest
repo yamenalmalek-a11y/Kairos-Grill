@@ -1,11 +1,12 @@
 {
   "id": "/admin.html",
-  "name": "Kairos Grill — Bestell-Tablet",
-  "short_name": "Kairos Admin",
-  "description": "Bestell-Empfang & Verwaltung für Kairos Grill Rostock.",
+  "name": "Kairos Grill — Bestell-Terminal",
+  "short_name": "Kairos Grill",
+  "description": "Bestell-Empfang & 58mm Bon-Druck für Kairos Grill Rostock.",
   "start_url": "/admin.html",
   "scope": "/admin.html",
   "display": "standalone",
+  "orientation": "any",
   "theme_color": "#0B0D0F",
   "background_color": "#0B0D0F",
   "icons": [

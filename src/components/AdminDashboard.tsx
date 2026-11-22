@@ -5,6 +5,7 @@ import {
   BellOff,
   Check,
   ChefHat,
+  Download,
   ExternalLink,
   KeyRound,
   Lock,
@@ -15,11 +16,14 @@ import {
   Phone,
   Printer,
   ShieldCheck,
+  Smartphone,
   Trash2,
   Truck,
+  X,
   XCircle,
 } from 'lucide-react';
 import { KAIROS_ASSETS, formatEuro } from '@/src/data/kairosData';
+import { usePWAInstall } from '@/src/hooks/usePWAInstall';
 import {
   ComplaintCategory,
   ComplaintRecord,
@@ -41,6 +45,11 @@ import {
   importCredentialsFromJwk,
 } from '@/src/utils/kitchenCrypto';
 import { playNewOrderBell, unlockTabletAudio } from '@/src/utils/soundAlert';
+import { ReceiptPaperWidth } from '@/src/utils/thermalPrinter';
+import {
+  ThermalReceiptModal,
+  ThermalReceiptSlip,
+} from '@/src/components/ThermalReceiptModal';
 
 interface AdminDashboardProps {
   lang: 'ar' | 'de';
@@ -164,9 +173,21 @@ export function AdminDashboard({
   const [updatingComplaintId, setUpdatingComplaintId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [printOrder, setPrintOrder] = useState<OrderRecord | null>(null);
+  const [paperWidth, setPaperWidth] = useState<ReceiptPaperWidth>('58mm');
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [confirmDeleteOrderId, setConfirmDeleteOrderId] = useState<string | null>(null);
+
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
+
+  const handleInstallOnDevice = async () => {
+    if (isInstallable) {
+      const accepted = await install();
+      if (accepted) return;
+    }
+    setShowInstallGuide(true);
+  };
 
   const initialOrdersLoadedRef = useRef(false);
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
@@ -520,10 +541,90 @@ export function AdminDashboard({
 
   const handlePrintOrder = (order: OrderRecord) => {
     setPrintOrder(order);
-    setTimeout(() => {
-      window.print();
-    }, 80);
   };
+
+  const installGuideModal = showInstallGuide ? (
+    <div
+      className="fixed inset-0 z-50 bg-[#0B0D0F]/85 backdrop-blur-xs flex items-center justify-center p-4 print:hidden"
+      onClick={() => setShowInstallGuide(false)}
+    >
+      <div
+        className="w-full max-w-md bg-[#14171A] border border-[#262B31] rounded-[16px] p-5 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-[10px] bg-[#FF8000]/15 border border-[#FF8000]/35 flex items-center justify-center shrink-0">
+              <Smartphone className="w-5 h-5 text-[#FF8000]" />
+            </div>
+            <div>
+              <h3 className="font-display text-[16px] font-extrabold text-[#F4F5F6]">
+                {lang === 'ar'
+                  ? 'تثبيت Kairos Grill على الجهاز'
+                  : 'Kairos Grill auf Gerät installieren'}
+              </h3>
+              <p className="text-[11px] text-[#A3ACB3]">
+                {lang === 'ar'
+                  ? 'جهاز Sunmi / أندرويد / آيباد'
+                  : 'Sunmi POS / Android / iPad'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowInstallGuide(false)}
+            aria-label="Close"
+            className="w-8 h-8 rounded-[8px] bg-[#1C2024] border border-[#262B31] text-[#F4F5F6] flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="bg-[#1C2024] border border-[#262B31] rounded-[12px] p-4 space-y-2.5 text-[13px] text-[#F4F5F6] leading-relaxed">
+          {isIOS ? (
+            <p>
+              {lang === 'ar'
+                ? 'في سفاري اضغط زر المشاركة (Share) ثم اختر «إضافة إلى الشاشة الرئيسية» وسيظهر التطبيق باسم Kairos Grill.'
+                : 'Tippen Sie in Safari auf „Teilen“ und wählen Sie „Zum Home-Bildschirm“.'}
+            </p>
+          ) : (
+            <>
+              <p className="font-bold text-[#FF8000]">
+                {lang === 'ar'
+                  ? 'خطوات التثبيت على جهاز Sunmi (أندرويد):'
+                  : 'So installieren Sie auf dem Sunmi-Gerät:'}
+              </p>
+              <ol className="list-decimal list-inside space-y-1.5 text-[12px] text-[#A3ACB3]">
+                <li>
+                  {lang === 'ar'
+                    ? 'افتح هذه الصفحة في متصفح Chrome على الجهاز.'
+                    : 'Diese Seite im Chrome-Browser auf dem Gerät öffnen.'}
+                </li>
+                <li>
+                  {lang === 'ar'
+                    ? 'اضغط على النقاط الثلاث (⋮) أعلى الشاشة ثم اختر «تثبيت التطبيق» أو «الإضافة إلى الشاشة الرئيسية».'
+                    : 'Oben rechts auf das Menü (⋮) tippen und „App installieren“ oder „Zum Startbildschirm hinzufügen“ wählen.'}
+                </li>
+                <li>
+                  {lang === 'ar'
+                    ? 'سيتثبت التطبيق مباشرة باسم Kairos Grill على شاشة الجهاز الرئيسية.'
+                    : 'Die App erscheint danach direkt mit dem Namen „Kairos Grill“ auf dem Startbildschirm.'}
+                </li>
+              </ol>
+            </>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowInstallGuide(false)}
+          className="w-full h-11 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white font-display font-bold text-[13px] transition-colors"
+        >
+          {lang === 'ar' ? 'فهمت' : 'Verstanden'}
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   const newComplaintsCount = complaints.filter((c) => c.status === 'new').length;
   const filteredOrders =
@@ -543,30 +644,41 @@ export function AdminDashboard({
   if (!credentials) {
     return (
       <div className="min-h-screen bg-[#0B0D0F] text-[#F4F5F6] flex flex-col">
+        {installGuideModal}
         <header className="bg-[#14171A] border-b border-[#262B31]">
-          <div className="max-w-[1100px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          <div className="max-w-[1100px] mx-auto px-3 sm:px-6 min-h-16 py-2 flex flex-wrap items-center justify-between gap-2">
             <div className="bg-white rounded-[10px] px-2.5 py-1 inline-flex items-center">
               <img
                 src={KAIROS_ASSETS.logoBanner}
                 alt="Kairos Grill Admin"
-                className="h-9 w-auto object-contain"
+                className="h-8 sm:h-9 w-auto object-contain"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {!isInstalled && (
+                <button
+                  type="button"
+                  onClick={handleInstallOnDevice}
+                  className="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[11px] sm:text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5 shrink-0" />
+                  <span>{lang === 'ar' ? 'تثبيت على الجهاز' : 'Installieren'}</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => onChangeLang(lang === 'ar' ? 'de' : 'ar')}
-                className="h-10 px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] font-bold text-[#F4F5F6] transition-colors"
+                className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] font-bold text-[#F4F5F6] transition-colors"
               >
                 {lang === 'ar' ? 'DE' : 'AR'}
               </button>
               <button
                 type="button"
                 onClick={onExitAdmin}
-                className="h-10 px-4 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[13px] font-bold text-[#F4F5F6] inline-flex items-center gap-1.5 transition-colors"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] sm:text-[13px] font-bold text-[#F4F5F6] inline-flex items-center gap-1.5 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>{lang === 'ar' ? 'العودة للمنيو' : 'Zur Speisekarte'}</span>
+                <span>{lang === 'ar' ? 'المنيو' : 'Menü'}</span>
               </button>
             </div>
           </div>
@@ -694,49 +806,38 @@ export function AdminDashboard({
   // Unlocked Shop Tablet Live Orders & Complaints Dashboard
   return (
     <div className="min-h-screen bg-[#0B0D0F] text-[#F4F5F6] flex flex-col">
-      {/* Print-Only Kitchen Ticket */}
+      {installGuideModal}
+
+      {/* Print-Only 58mm/80mm Sunmi Thermal Kitchen Ticket */}
       {printOrder && (
-        <div className="hidden print:block p-6 bg-white text-black font-sans text-[13px] max-w-md mx-auto">
-          <h2 className="text-[20px] font-extrabold border-b-2 border-black pb-2 mb-3">
-            Kairos Grill · #{printOrder.orderNumber}
-          </h2>
-          <p className="font-bold">{printOrder.customerName}</p>
-          <p>{printOrder.customerPhone}</p>
-          <p className="mb-3">{printOrder.address}</p>
-          <div className="border-y border-black py-2 my-2 space-y-1">
-            {printOrder.items.map((item, idx) => (
-              <div key={idx} className="flex justify-between">
-                <span>
-                  {item.qty}x {item.itemNumber ? `#${item.itemNumber} ` : ''}
-                  {item.nameDe} {item.variantLabel ? `(${item.variantLabel})` : ''}
-                </span>
-                <span>{formatEuro(item.unitPrice * item.qty)}</span>
-              </div>
-            ))}
-          </div>
-          {printOrder.notes && <p className="font-bold mb-2">Hinweis: {printOrder.notes}</p>}
-          <p>Netto: {formatEuro(printOrder.subtotal)}</p>
-          {printOrder.foodTax > 0 && <p>MwSt 7%: +{formatEuro(printOrder.foodTax)}</p>}
-          {printOrder.drinksTax > 0 && <p>MwSt 19%: +{formatEuro(printOrder.drinksTax)}</p>}
-          <p>Lieferung: {formatEuro(printOrder.deliveryFee)}</p>
-          <p className="text-[18px] font-extrabold mt-2">
-            Gesamt: {formatEuro(printOrder.total)} ({printOrder.paymentMethod === 'cash' ? 'Bar' : 'Online'})
-          </p>
+        <div className="hidden print:block bg-white text-black">
+          <ThermalReceiptSlip order={printOrder} paperWidth={paperWidth} />
         </div>
       )}
 
-      {/* Top Tablet Header */}
+      {/* Interactive Thermal Receipt Preview & Print Modal */}
+      {printOrder && (
+        <ThermalReceiptModal
+          order={printOrder}
+          lang={lang}
+          paperWidth={paperWidth}
+          onChangePaperWidth={setPaperWidth}
+          onClose={() => setPrintOrder(null)}
+        />
+      )}
+
+      {/* Top Tablet / Sunmi POS Header */}
       <header className="sticky top-0 z-40 bg-[#14171A] border-b border-[#262B31] print:hidden">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="max-w-[1280px] mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
             <img
               src="/pwa-192x192.png"
               alt="Kairos Grill Tablet"
-              className="w-10 h-10 object-contain shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0"
             />
             <div>
-              <h1 className="font-display text-[16px] sm:text-[18px] font-extrabold text-[#F4F5F6]">
-                {lang === 'ar' ? 'تابلت استقبال طلبات Kairos Grill' : 'Kairos Grill Bestell-Tablet'}
+              <h1 className="font-display text-[14px] sm:text-[18px] font-extrabold text-[#F4F5F6] leading-tight">
+                {lang === 'ar' ? 'طلبات Kairos Grill' : 'Kairos Grill Bestellungen'}
               </h1>
               <p className="text-[11px] text-[#A3ACB3] tabular-nums">
                 {pendingCount > 0
@@ -750,7 +851,18 @@ export function AdminDashboard({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {!isInstalled && (
+              <button
+                type="button"
+                onClick={handleInstallOnDevice}
+                className="h-9 sm:h-10 px-3 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[11px] sm:text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 shrink-0" />
+                <span>{lang === 'ar' ? 'تثبيت التطبيق' : 'App installieren'}</span>
+              </button>
+            )}
+
             {/* Sound Alert Toggle */}
             <button
               type="button"
@@ -760,18 +872,18 @@ export function AdminDashboard({
                 setSoundEnabled(next);
                 if (next) playNewOrderBell();
               }}
-              className={`h-10 px-3.5 rounded-[12px] text-[12px] font-bold inline-flex items-center gap-1.5 border transition-colors ${
+              className={`h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-[12px] text-[11px] sm:text-[12px] font-bold inline-flex items-center gap-1.5 border transition-colors ${
                 soundEnabled
                   ? 'bg-[#22C55E]/15 border-[#22C55E]/35 text-[#4ADE80]'
                   : 'bg-[#1C2024] border-[#262B31] text-[#A3ACB3]'
               }`}
             >
-              {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+              {soundEnabled ? <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <BellOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               <span>
                 {soundEnabled
                   ? lang === 'ar'
-                    ? 'جرس التنبيه مفعل'
-                    : 'Signalton an'
+                    ? 'الجرس مفعل'
+                    : 'Ton an'
                   : lang === 'ar'
                     ? 'صامت'
                     : 'Stumm'}
@@ -782,7 +894,7 @@ export function AdminDashboard({
               <button
                 type="button"
                 onClick={() => setRepeatRingPending((v) => !v)}
-                className={`h-10 px-3 rounded-[12px] text-[12px] font-bold border transition-colors ${
+                className={`h-9 sm:h-10 px-2.5 sm:px-3 rounded-[12px] text-[11px] sm:text-[12px] font-bold border transition-colors ${
                   repeatRingPending
                     ? 'bg-[#FF8000]/15 border-[#FF8000]/40 text-[#FF8000]'
                     : 'bg-[#1C2024] border-[#262B31] text-[#A3ACB3]'
@@ -791,7 +903,7 @@ export function AdminDashboard({
                 {repeatRingPending
                   ? lang === 'ar'
                     ? 'رنين متكرر'
-                    : 'Dauerton an'
+                    : 'Dauerton'
                   : lang === 'ar'
                     ? 'رنة واحدة'
                     : 'Einzelton'}
@@ -804,7 +916,7 @@ export function AdminDashboard({
                 setShowPinRotate((v) => !v);
                 setPinRotateStatus(null);
               }}
-              className={`h-10 px-3 rounded-[12px] border text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors ${
+              className={`h-9 sm:h-10 px-2.5 sm:px-3 rounded-[12px] border text-[11px] sm:text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors ${
                 showPinRotate
                   ? 'bg-[#FF8000]/15 border-[#FF8000]/40 text-[#FF8000]'
                   : 'bg-[#1C2024] hover:bg-[#23282D] border-[#262B31] text-[#F4F5F6]'
@@ -817,15 +929,15 @@ export function AdminDashboard({
             <button
               type="button"
               onClick={onExitAdmin}
-              className="h-10 px-3.5 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] font-bold text-[#F4F5F6] transition-colors"
+              className="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[11px] sm:text-[12px] font-bold text-[#F4F5F6] transition-colors"
             >
-              {lang === 'ar' ? 'عرض المنيو' : 'Speisekarte'}
+              {lang === 'ar' ? 'المنيو' : 'Menü'}
             </button>
 
             <button
               type="button"
               onClick={() => onChangeLang(lang === 'ar' ? 'de' : 'ar')}
-              className="h-10 px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[12px] font-bold text-[#F4F5F6] transition-colors"
+              className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[11px] sm:text-[12px] font-bold text-[#F4F5F6] transition-colors"
             >
               {lang === 'ar' ? 'DE' : 'AR'}
             </button>
@@ -834,9 +946,9 @@ export function AdminDashboard({
               type="button"
               onClick={handleLockTablet}
               aria-label="Lock tablet"
-              className="h-10 px-3 rounded-[12px] bg-[#1C2024] hover:bg-red-500/15 border border-[#262B31] hover:border-red-500/35 text-[12px] font-bold text-[#A3ACB3] hover:text-red-400 inline-flex items-center gap-1.5 transition-colors"
+              className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-[12px] bg-[#1C2024] hover:bg-red-500/15 border border-[#262B31] hover:border-red-500/35 text-[11px] sm:text-[12px] font-bold text-[#A3ACB3] hover:text-red-400 inline-flex items-center gap-1.5 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{lang === 'ar' ? 'قفل' : 'Sperren'}</span>
             </button>
           </div>
@@ -1266,8 +1378,8 @@ export function AdminDashboard({
                           onClick={() => handlePrintOrder(order)}
                           className="h-11 px-3.5 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] text-[#F4F5F6] border border-[#262B31] text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
                         >
-                          <Printer className="w-4 h-4" />
-                          <span>{lang === 'ar' ? 'طباعة' : 'Drucken'}</span>
+                          <Printer className="w-4 h-4 text-[#FF8000]" />
+                          <span>{lang === 'ar' ? 'طباعة (58mm)' : 'Bon 58mm'}</span>
                         </button>
 
                         <a
