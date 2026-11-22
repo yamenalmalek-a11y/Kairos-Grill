@@ -8,6 +8,12 @@ import './index.css';
 
 registerSW({ immediate: true });
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+  });
+}
+
 function AdminApp() {
   const [lang, setLang] = useState<'ar' | 'de'>('de');
 

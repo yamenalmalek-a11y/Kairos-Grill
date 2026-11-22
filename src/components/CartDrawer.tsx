@@ -172,8 +172,8 @@ export function CartDrawer({
         tone: 'fallback',
         text: inIframe
           ? lang === 'ar'
-            ? 'نافذة المعاينة تمنع الوصول للـ GPS تلقائياً (يعمل مباشرة بعد تثبيت التطبيق أو فتحه بالمتصفح). اختر الحي أدناه أو اكتب عنوانك.'
-            : 'GPS ist im Vorschaufenster blockiert (funktioniert in der installierten App). Stadtteil unten wählen oder Adresse eingeben.'
+            ? 'نافذة المعاينة تمنع الوصول للـ GPS تلقائياً (يعمل مباشرة عند الفتح في متصفح الهاتف). اختر الحي أدناه أو اكتب عنوانك.'
+            : 'GPS ist im Vorschaufenster blockiert (funktioniert direkt im Smartphone-Browser). Stadtteil unten wählen oder Adresse eingeben.'
           : lang === 'ar'
             ? 'يرجى السماح بالوصول للموقع أو اختيار الحي أدناه وكتابة اسم الشارع.'
             : 'Bitte Standortfreigabe erlauben oder Stadtteil unten wählen.',
