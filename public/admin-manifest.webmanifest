@@ -1,0 +1,31 @@
+{
+  "id": "/admin.html",
+  "name": "Kairos Grill — Bestell-Tablet",
+  "short_name": "Kairos Admin",
+  "description": "Bestell-Empfang & Verwaltung für Kairos Grill Rostock.",
+  "start_url": "/admin.html",
+  "scope": "/admin.html",
+  "display": "standalone",
+  "theme_color": "#FF8000",
+  "background_color": "#F8F5F2",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

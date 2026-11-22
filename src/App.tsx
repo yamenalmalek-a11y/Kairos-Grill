@@ -32,7 +32,6 @@ import { CroppedPhoto } from '@/src/components/CroppedPhoto';
 import { CartDrawer } from '@/src/components/CartDrawer';
 import { OfflineIndicator } from '@/src/components/OfflineIndicator';
 import { VideoShowcase } from '@/src/components/VideoShowcase';
-import { PWAInstallButton } from '@/src/components/PWAInstallButton';
 import { IntroVideoModal } from '@/src/components/IntroVideoModal';
 import { AdminDashboard } from '@/src/components/AdminDashboard';
 import { CustomerOrderTracker } from '@/src/components/CustomerOrderTracker';
@@ -240,12 +239,11 @@ export default function App() {
   );
 
   const openAdminTablet = () => {
-    setIsAdminView(true);
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('admin', '1');
-      window.history.replaceState({}, '', url.toString());
+      window.location.href = '/admin.html';
+      return;
     }
+    setIsAdminView(true);
   };
 
   const exitAdminTablet = () => {
@@ -448,7 +446,7 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* Primary Menu CTA & App Download CTA */}
+                {/* Primary Menu CTA */}
                 <div className="mt-7 flex flex-wrap items-center gap-3">
                   <a
                     href="#menu"
@@ -458,7 +456,12 @@ export default function App() {
                     <span>{lang === 'ar' ? 'تصفح القائمة واطلب الآن' : 'Jetzt bestellen'}</span>
                     <ArrowDown className="w-4 h-4" />
                   </a>
-                  <PWAInstallButton lang={lang} variant="primary" />
+                  <a
+                    href="#catering"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-white hover:bg-[#FFF3E6] text-[#242E30] border border-[#EAE5DF] font-display font-bold text-[14px] transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <span>{lang === 'ar' ? 'البوفيه والمناسبات' : 'Catering & Events'}</span>
+                  </a>
                 </div>
               </div>
 
@@ -805,7 +808,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Section 4: Contact, Hours & App Download */}
+        {/* Section 4: Contact & Hours */}
         <section id="contact" className="max-w-[1280px] mx-auto px-4 sm:px-6 py-12">
           <div className="bg-white rounded-[16px] p-6 sm:p-8 border border-[#EAE5DF] shadow-[0_4px_20px_rgba(36,46,48,0.05)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5">
@@ -824,8 +827,8 @@ export default function App() {
               <div>
                 <h2 className="font-display text-[22px] sm:text-[26px] font-extrabold text-[#242E30]">
                   {lang === 'ar'
-                    ? 'ساعات العمل، التوصيل وتثبيت التطبيق'
-                    : 'Standort, Öffnungszeiten & App'}
+                    ? 'ساعات العمل، الموقع والتوصيل'
+                    : 'Standort, Öffnungszeiten & Kontakt'}
                 </h2>
                 <p className="text-[14px] text-[#5A6568] mt-1">
                   Lieferservice Kairos Grill · {KAIROS_INFO.address}
@@ -864,7 +867,6 @@ export default function App() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
-                <PWAInstallButton lang={lang} variant="secondary" />
                 <button
                   type="button"
                   onClick={() => setIsManagementOpen(true)}

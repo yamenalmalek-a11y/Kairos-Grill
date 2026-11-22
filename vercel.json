@@ -1,8 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/admin",
+      "destination": "/admin.html",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!admin\\.html|admin-manifest\\.webmanifest|sw\\.js|workbox-.*|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]

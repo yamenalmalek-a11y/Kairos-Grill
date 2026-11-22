@@ -28,15 +28,15 @@ export function PWAInstallButton({ lang, variant = 'primary' }: PWAInstallButton
 
   const buttonText =
     lang === 'ar'
-      ? 'تنزيل التطبيق (Android / iPhone)'
-      : 'App installieren (Android & iPhone)';
+      ? 'تنزيل تطبيق استقبال الطلبات'
+      : 'Bestell-Tablet App installieren';
 
   return (
     <>
       <button
         type="button"
         onClick={handleClick}
-        className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-bold transition-colors whitespace-nowrap shrink-0 ${
+        className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[12px] text-[13px] font-bold transition-colors whitespace-nowrap shrink-0 ${
           variant === 'primary'
             ? 'bg-[#242E30] hover:bg-[#354245] text-white shadow-[0_6px_18px_rgba(36,46,48,0.16)]'
             : 'bg-white hover:bg-[#FFF3E6] text-[#242E30] border border-[#EAE5DF]'
@@ -58,17 +58,17 @@ export function PWAInstallButton({ lang, variant = 'primary' }: PWAInstallButton
               <div className="flex items-center gap-3">
                 <img
                   src="/pwa-192x192.png"
-                  alt="Kairos Grill App Icon"
+                  alt="Kairos Grill Admin App Icon"
                   className="w-12 h-12 object-contain shrink-0"
                 />
                 <div>
                   <h3 id="pwa-install-title" className="font-display text-[17px] font-bold text-[#242E30]">
-                    {lang === 'ar' ? 'تثبيت تطبيق Kairos Grill' : 'Kairos Grill App installieren'}
+                    {lang === 'ar' ? 'تثبيت تطبيق استقبال الطلبات' : 'Bestell-Tablet App installieren'}
                   </h3>
                   <p className="text-[12px] text-[#5A6568]">
                     {lang === 'ar'
-                      ? 'يعمل كتطبيق مستقل على الشاشة الرئيسية'
-                      : 'Direkt auf dem Startbildschirm ohne App Store'}
+                      ? 'يثبت صفحة استلام الطلبات فقط كتطبيق مستقل على التابلت أو الموبايل'
+                      : 'Installiert nur den Bestell-Empfang als eigenständige App'}
                   </p>
                 </div>
               </div>

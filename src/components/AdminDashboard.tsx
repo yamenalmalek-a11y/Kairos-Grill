@@ -607,6 +607,15 @@ export function AdminDashboard({
                       : 'PIN speichern & Tablet starten'}
               </button>
             </form>
+
+            <div className="pt-4 border-t border-[#EAE5DF] flex flex-col items-center gap-2 text-center">
+              <PWAInstallButton lang={lang} variant="secondary" />
+              <p className="text-[11px] text-[#5A6568]">
+                {lang === 'ar'
+                  ? 'يمكنك تثبيت صفحة استلام الطلبات فقط كتطبيق مستقل على تابلت أو موبايل المحل.'
+                  : 'Installiert nur diese Bestell-Empfangsseite als eigene App auf Ihrem Tablet.'}
+              </p>
+            </div>
           </div>
         </main>
       </div>
