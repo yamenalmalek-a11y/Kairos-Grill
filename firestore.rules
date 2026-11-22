@@ -13,60 +13,99 @@ service cloud.firestore {
       return resource.data;
     }
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isValidId(id) {
       return id is string && id.size() >= 3 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    function isAdmin() {
-      return isSignedIn() && (
-        (
-          request.auth.token.email == 'YamenAlmalek@gmail.com' &&
-          request.auth.token.email_verified == true
-        ) ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
-    }
-
-    function isValidAdminUser(data) {
-      return data.keys().hasAll(['email', 'role', 'createdAt']) &&
-        data.keys().hasOnly(['email', 'role', 'createdAt']) &&
-        data.email is string &&
-        data.email.size() >= 3 &&
-        data.email.size() <= 120 &&
-        data.role == 'admin' &&
-        data.createdAt is timestamp;
     }
 
     function isValidOrderStatus(status) {
       return status in ['pending', 'accepted', 'preparing', 'delivering', 'completed', 'cancelled'];
     }
 
-    function isValidOrder(data) {
+    function isValidVault(data) {
       return data.keys().hasAll([
-          'orderNumber',
-          'customerName',
-          'customerPhone',
-          'orderMode',
-          'address',
-          'gpsText',
-          'paymentMethod',
-          'notes',
-          'items',
-          'subtotal',
-          'foodTax',
-          'drinksTax',
-          'deliveryFee',
-          'total',
-          'status',
+          'publicKeyJwk',
+          'encryptedVaultBlob',
+          'salt',
+          'iv',
+          'adminSecretHash',
+          'lastActionId',
           'createdAt',
           'updatedAt'
         ]) &&
         data.keys().hasOnly([
+          'publicKeyJwk',
+          'encryptedVaultBlob',
+          'salt',
+          'iv',
+          'adminSecretHash',
+          'lastActionId',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.publicKeyJwk is string &&
+        data.publicKeyJwk.size() >= 50 &&
+        data.publicKeyJwk.size() <= 2000 &&
+        data.encryptedVaultBlob is string &&
+        data.encryptedVaultBlob.size() >= 40 &&
+        data.encryptedVaultBlob.size() <= 12000 &&
+        data.salt is string &&
+        data.salt.size() >= 12 &&
+        data.salt.size() <= 128 &&
+        data.iv is string &&
+        data.iv.size() >= 12 &&
+        data.iv.size() <= 64 &&
+        data.adminSecretHash is string &&
+        data.adminSecretHash.size() >= 32 &&
+        data.adminSecretHash.size() <= 128 &&
+        data.lastActionId is string &&
+        data.lastActionId.size() <= 128 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdminProof(data) {
+      return data.keys().hasAll([
+          'targetType',
+          'targetId',
+          'targetStatus',
+          'adminSecret',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'targetType',
+          'targetId',
+          'targetStatus',
+          'adminSecret',
+          'createdAt'
+        ]) &&
+        data.targetType in ['order', 'complaint', 'vault'] &&
+        data.targetId is string &&
+        data.targetId.size() >= 3 &&
+        data.targetId.size() <= 128 &&
+        data.targetStatus is string &&
+        data.targetStatus.size() >= 1 &&
+        data.targetStatus.size() <= 32 &&
+        data.adminSecret is string &&
+        data.adminSecret.size() >= 16 &&
+        data.adminSecret.size() <= 128 &&
+        data.createdAt is timestamp;
+    }
+
+    function hasValidAdminProof(proofId, targetType, targetId, targetStatus) {
+      return isValidId(proofId) &&
+        proofId.size() >= 20 &&
+        existsAfter(/databases/$(database)/documents/adminProofs/$(proofId)) &&
+        getAfter(/databases/$(database)/documents/adminProofs/$(proofId)).data.targetType == targetType &&
+        getAfter(/databases/$(database)/documents/adminProofs/$(proofId)).data.targetId == targetId &&
+        getAfter(/databases/$(database)/documents/adminProofs/$(proofId)).data.targetStatus == targetStatus;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'shopId',
           'orderNumber',
+          'piiEncrypted',
+          'encryptedPii',
           'customerName',
           'customerPhone',
           'orderMode',
@@ -81,17 +120,45 @@ service cloud.firestore {
           'deliveryFee',
           'total',
           'status',
+          'lastActionId',
           'createdAt',
           'updatedAt'
         ]) &&
+        data.keys().hasOnly([
+          'shopId',
+          'orderNumber',
+          'piiEncrypted',
+          'encryptedPii',
+          'customerName',
+          'customerPhone',
+          'orderMode',
+          'address',
+          'gpsText',
+          'paymentMethod',
+          'notes',
+          'items',
+          'subtotal',
+          'foodTax',
+          'drinksTax',
+          'deliveryFee',
+          'total',
+          'status',
+          'lastActionId',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.shopId == 'kairos_rostock' &&
         data.orderNumber is string &&
         data.orderNumber.size() >= 3 &&
         data.orderNumber.size() <= 32 &&
+        data.piiEncrypted is bool &&
+        data.encryptedPii is string &&
+        data.encryptedPii.size() <= 16000 &&
         data.customerName is string &&
         data.customerName.size() >= 1 &&
         data.customerName.size() <= 80 &&
         data.customerPhone is string &&
-        data.customerPhone.size() >= 4 &&
+        data.customerPhone.size() >= 1 &&
         data.customerPhone.size() <= 32 &&
         data.orderMode in ['delivery', 'pickup'] &&
         data.address is string &&
@@ -113,6 +180,8 @@ service cloud.firestore {
         data.deliveryFee is number && data.deliveryFee >= 0 &&
         data.total is number && data.total >= 0 &&
         isValidOrderStatus(data.status) &&
+        data.lastActionId is string &&
+        data.lastActionId.size() <= 128 &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
     }
@@ -151,7 +220,10 @@ service cloud.firestore {
 
     function isValidComplaint(data) {
       return data.keys().hasAll([
+          'shopId',
           'complaintNumber',
+          'piiEncrypted',
+          'encryptedPii',
           'customerName',
           'customerPhone',
           'orderNumber',
@@ -159,11 +231,15 @@ service cloud.firestore {
           'message',
           'status',
           'adminNote',
+          'lastActionId',
           'createdAt',
           'updatedAt'
         ]) &&
         data.keys().hasOnly([
+          'shopId',
           'complaintNumber',
+          'piiEncrypted',
+          'encryptedPii',
           'customerName',
           'customerPhone',
           'orderNumber',
@@ -171,12 +247,17 @@ service cloud.firestore {
           'message',
           'status',
           'adminNote',
+          'lastActionId',
           'createdAt',
           'updatedAt'
         ]) &&
+        data.shopId == 'kairos_rostock' &&
         data.complaintNumber is string &&
         data.complaintNumber.size() >= 3 &&
         data.complaintNumber.size() <= 32 &&
+        data.piiEncrypted is bool &&
+        data.encryptedPii is string &&
+        data.encryptedPii.size() <= 16000 &&
         data.customerName is string &&
         data.customerName.size() >= 1 &&
         data.customerName.size() <= 80 &&
@@ -186,49 +267,76 @@ service cloud.firestore {
         data.orderNumber.size() <= 32 &&
         data.category in ['delivery_delay', 'food_quality', 'missing_item', 'service', 'other'] &&
         data.message is string &&
-        data.message.size() >= 3 &&
+        data.message.size() >= 1 &&
         data.message.size() <= 600 &&
         data.status in ['new', 'reviewed', 'resolved'] &&
         data.adminNote is string &&
         data.adminNote.size() <= 300 &&
+        data.lastActionId is string &&
+        data.lastActionId.size() <= 128 &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
     }
 
-    match /admins/{uid} {
-      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
-      allow list: if isAdmin();
-      allow create: if isAdmin() &&
-        isValidId(uid) &&
-        isValidAdminUser(incoming()) &&
-        incoming().createdAt == request.time;
-      allow update: if false;
-      allow delete: if isAdmin() && isValidId(uid);
+    match /kitchenVault/{vaultId} {
+      allow get: if vaultId == 'rostock';
+      allow list: if false;
+      allow create: if vaultId == 'rostock' &&
+        isValidVault(incoming()) &&
+        incoming().lastActionId == 'init' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if vaultId == 'rostock' &&
+        isValidVault(incoming()) &&
+        incoming().publicKeyJwk == existing().publicKeyJwk &&
+        incoming().adminSecretHash == existing().adminSecretHash &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['encryptedVaultBlob', 'salt', 'iv', 'lastActionId', 'updatedAt']) &&
+        hasValidAdminProof(incoming().lastActionId, 'vault', vaultId, 'pin_rotate');
+      allow delete: if false;
+    }
+
+    match /adminProofs/{proofId} {
+      allow get, list: if false;
+      allow create: if isValidId(proofId) &&
+        proofId.size() >= 20 &&
+        isValidAdminProof(incoming()) &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/kitchenVault/rostock) &&
+        hashing.sha256(incoming().adminSecret).toBase64() ==
+          get(/databases/$(database)/documents/kitchenVault/rostock).data.adminSecretHash;
+      allow update, delete: if false;
     }
 
     match /orders/{orderId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
+      allow get: if isValidId(orderId) &&
+        orderId.size() >= 20 &&
+        existing().shopId == 'kairos_rostock';
+      allow list: if resource.data.shopId == 'kairos_rostock' &&
+        isValidOrderStatus(resource.data.status);
       allow create: if isValidId(orderId) &&
         orderId.size() >= 20 &&
         isValidOrder(incoming()) &&
         incoming().status == 'pending' &&
+        incoming().lastActionId == 'created' &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time &&
         existsAfter(/databases/$(database)/documents/orderTracking/$(orderId));
-      allow update: if isAdmin() &&
-        isValidId(orderId) &&
+      allow update: if isValidId(orderId) &&
         isValidOrder(incoming()) &&
+        incoming().shopId == existing().shopId &&
         incoming().orderNumber == existing().orderNumber &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
-      allow delete: if isAdmin() && isValidId(orderId);
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastActionId', 'updatedAt']) &&
+        hasValidAdminProof(incoming().lastActionId, 'order', orderId, incoming().status);
+      allow delete: if false;
     }
 
     match /orderTracking/{orderId} {
-      allow get: if isAdmin() || (isValidId(orderId) && orderId.size() >= 20);
-      allow list: if isAdmin();
+      allow get: if isValidId(orderId) && orderId.size() >= 20;
+      allow list: if false;
       allow create: if isValidId(orderId) &&
         orderId.size() >= 20 &&
         isValidOrderTracking(incoming()) &&
@@ -236,8 +344,7 @@ service cloud.firestore {
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time &&
         existsAfter(/databases/$(database)/documents/orders/$(orderId));
-      allow update: if isAdmin() &&
-        isValidId(orderId) &&
+      allow update: if isValidId(orderId) &&
         isValidOrderTracking(incoming()) &&
         incoming().orderNumber == existing().orderNumber &&
         incoming().createdAt == existing().createdAt &&
@@ -247,28 +354,34 @@ service cloud.firestore {
           'statusMessageAr',
           'statusMessageDe',
           'updatedAt'
-        ]);
-      allow delete: if isAdmin() && isValidId(orderId);
+        ]) &&
+        getAfter(/databases/$(database)/documents/orders/$(orderId)).data.status == incoming().status;
+      allow delete: if false;
     }
 
     match /complaints/{complaintId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
+      allow get: if isValidId(complaintId) &&
+        complaintId.size() >= 20 &&
+        existing().shopId == 'kairos_rostock';
+      allow list: if resource.data.shopId == 'kairos_rostock' &&
+        resource.data.status in ['new', 'reviewed', 'resolved'];
       allow create: if isValidId(complaintId) &&
         complaintId.size() >= 20 &&
         isValidComplaint(incoming()) &&
         incoming().status == 'new' &&
         incoming().adminNote == '' &&
+        incoming().lastActionId == 'created' &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time;
-      allow update: if isAdmin() &&
-        isValidId(complaintId) &&
+      allow update: if isValidId(complaintId) &&
         isValidComplaint(incoming()) &&
+        incoming().shopId == existing().shopId &&
         incoming().complaintNumber == existing().complaintNumber &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt']);
-      allow delete: if isAdmin() && isValidId(complaintId);
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'lastActionId', 'updatedAt']) &&
+        hasValidAdminProof(incoming().lastActionId, 'complaint', complaintId, incoming().status);
+      allow delete: if false;
     }
   }
 }

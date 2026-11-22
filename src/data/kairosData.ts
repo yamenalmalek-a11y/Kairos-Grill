@@ -1990,3 +1990,5 @@ export function buildWhatsAppOrderText(payload: WhatsAppOrderPayload): string {
 export function buildWhatsAppUrl(message: string): string {
   return `https://wa.me/${KAIROS_INFO.whatsappInternational}?text=${encodeURIComponent(message)}`;
 }
+
+

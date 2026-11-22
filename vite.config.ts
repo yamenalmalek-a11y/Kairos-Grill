@@ -16,7 +16,7 @@ export default defineConfig(() => {
           id: '/',
           name: 'Kairos Grill — Lieferservice Rostock',
           short_name: 'Kairos Grill',
-          description: 'مطعم وكافيه Kairos Grill في روستوك — اطلب مباشرة عبر واتساب مع الفاتورة التفصيلية.',
+          description: 'Kairos Grill Rostock — Orientalisch, frisch & 100% hausgemacht. Direkt online & per WhatsApp bestellen.',
           theme_color: '#FF8000',
           background_color: '#F8F5F2',
           display: 'standalone',

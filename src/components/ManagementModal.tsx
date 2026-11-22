@@ -1,25 +1,13 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { FormEvent, useState } from 'react';
 import {
   CheckCircle2,
-  Download,
   Lock,
-  LogOut,
   MessageSquareWarning,
   Send,
-  ShieldAlert,
-  ShieldCheck,
+  Tablet,
   X,
 } from 'lucide-react';
-import {
-  ADMIN_EMAIL,
-  auth,
-  formatFirebaseAuthError,
-  googleProvider,
-  isNativeAuthHost,
-} from '@/src/firebase';
 import { ComplaintCategory, createComplaint } from '@/src/services/kairosFirebase';
-import { PWAInstallButton } from '@/src/components/PWAInstallButton';
 
 interface ManagementModalProps {
   isOpen: boolean;
@@ -51,23 +39,7 @@ export function ManagementModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submittedNumber, setSubmittedNumber] = useState<string | null>(null);
 
-  const [showAdminDownloadGate, setShowAdminDownloadGate] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [signingIn, setSigningIn] = useState(false);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsub();
-  }, []);
-
   if (!isOpen) return null;
-
-  const isAuthorizedAdmin =
-    Boolean(user?.emailVerified) &&
-    user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   const handleComplaintSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -105,30 +77,6 @@ export function ManagementModal({
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setAuthError(null);
-    setSigningIn(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      setAuthError(formatFirebaseAuthError(err, lang));
-    } finally {
-      setSigningIn(false);
-    }
-  };
-
-  const handleClickAdminAppOption = async () => {
-    setShowAdminDownloadGate(true);
-    if (!user && isNativeAuthHost()) {
-      await handleGoogleSignIn();
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut(auth);
-    setAuthError(null);
   };
 
   return (
@@ -312,138 +260,26 @@ export function ManagementModal({
             )}
           </section>
 
-          {/* Small Admin App Download Option Right Under Complaints Section */}
+          {/* Direct Entry to PIN-Protected Restaurant Tablet Dashboard */}
           <div className="pt-4 border-t border-[#EAE5DF]">
-            {!showAdminDownloadGate ? (
-              <div className="flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={handleClickAdminAppOption}
-                  className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#5A6568] hover:text-[#FF8000] transition-colors"
-                >
-                  <Lock className="w-3.5 h-3.5 shrink-0" />
-                  <Download className="w-3.5 h-3.5 shrink-0" />
-                  <span>
-                    {lang === 'ar' ? 'تنزيل تطبيق للإدارة' : 'Admin-App herunterladen'}
-                  </span>
-                </button>
-              </div>
-            ) : (
-              <div className="p-4 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#FF8000] shrink-0" />
-                    <span className="font-display text-[13px] font-bold text-[#242E30]">
-                      {lang === 'ar' ? 'تطبيق الإدارة (محمي)' : 'Verwaltungs-App (Geschützt)'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowAdminDownloadGate(false)}
-                    className="text-[11px] font-semibold text-[#5A6568] hover:text-[#242E30]"
-                  >
-                    {lang === 'ar' ? 'إغلاق' : 'Schließen'}
-                  </button>
-                </div>
-
-                {!user ? (
-                  !isNativeAuthHost() ? (
-                    <div className="p-3 rounded-[10px] bg-amber-50 border border-amber-200 space-y-1.5 text-start">
-                      <p className="text-[12px] font-bold text-[#242E30]">
-                        {lang === 'ar'
-                          ? 'تسجيل دخول الإدارة غير متاح على النطاقات الخارجية'
-                          : 'Admin-Login auf externen Domains nicht verfügbar'}
-                      </p>
-                      <p className="text-[11px] text-[#5A6568] leading-relaxed">
-                        {lang === 'ar'
-                          ? 'يرتبط تسجيل دخول Google تلقائياً بالنطاق المنشور عبر زر «انشر» داخل المنصة. لاستخدام لوحة الإدارة وتنزيل تطبيق الإدارة بدون أي أخطاء، افتح التطبيق المنشور عبر المنصة.'
-                          : 'Die Google-Anmeldung ist an die direkt über die Plattform veröffentlichte Domain gebunden.'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2.5">
-                      <p className="text-[12px] text-[#5A6568]">
-                        {lang === 'ar'
-                          ? 'لتنزيل تطبيق الإدارة أو فتح لوحة الطلبات، يجب تسجيل الدخول بحساب مالك المطعم المعتمد أولاً.'
-                          : 'Um die Admin-App zu installieren oder zu öffnen, melden Sie sich mit dem autorisierten Inhaber-Konto an.'}
-                      </p>
-                      <button
-                        type="button"
-                        disabled={signingIn}
-                        onClick={handleGoogleSignIn}
-                        className="w-full h-10 rounded-[10px] bg-[#242E30] hover:bg-[#354245] disabled:opacity-60 text-white text-[12px] font-bold transition-colors"
-                      >
-                        {signingIn
-                          ? lang === 'ar'
-                            ? 'جاري تسجيل الدخول...'
-                            : 'Anmeldung...'
-                          : lang === 'ar'
-                            ? 'تسجيل الدخول بحساب الإدارة (Google)'
-                            : 'Mit Google Admin-Konto anmelden'}
-                      </button>
-                      {authError && (
-                        <p className="text-[11px] font-semibold text-red-600">{authError}</p>
-                      )}
-                    </div>
-                  )
-                ) : !isAuthorizedAdmin ? (
-                  <div className="p-3 rounded-[10px] bg-red-50 border border-red-200 text-red-700 space-y-2">
-                    <div className="flex items-center gap-1.5 text-[12px] font-bold">
-                      <ShieldAlert className="w-4 h-4 shrink-0" />
-                      <span>
-                        {lang === 'ar'
-                          ? 'عذراً، هذا الحساب غير مصرح له بتنزيل تطبيق الإدارة'
-                          : 'Dieses Konto hat keinen Admin-Zugriff'}
-                      </span>
-                    </div>
-                    <p className="text-[11px]">{user.email}</p>
-                    <button
-                      type="button"
-                      onClick={handleSignOut}
-                      className="h-9 px-3 rounded-[8px] bg-white border border-red-300 text-red-700 text-[11px] font-bold inline-flex items-center gap-1.5"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>
-                        {lang === 'ar' ? 'تسجيل الخروج وتبديل الحساب' : 'Abmelden & wechseln'}
-                      </span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 text-[12px] text-[#16A34A] font-bold">
-                      <span>
-                        {lang === 'ar'
-                          ? 'تطبيق الإدارة جاهز للتنزيل والدخول'
-                          : 'Verwaltungs-App freigeschaltet'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleSignOut}
-                        className="text-[11px] text-[#5A6568] hover:text-red-600 font-semibold"
-                      >
-                        {lang === 'ar' ? 'تسجيل الخروج' : 'Abmelden'}
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <PWAInstallButton lang={lang} variant="primary" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onClose();
-                          onOpenAdminDashboard();
-                        }}
-                        className="flex-1 min-w-[160px] h-[46px] px-4 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white font-display font-bold text-[13px] transition-colors"
-                      >
-                        {lang === 'ar'
-                          ? 'فتح لوحة إدارة الطلبات والشكاوي'
-                          : 'Admin-Dashboard öffnen'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenAdminDashboard();
+              }}
+              className="w-full h-11 px-4 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] border border-[#EAE5DF] text-[#242E30] text-[13px] font-bold flex items-center justify-between transition-colors"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Tablet className="w-4 h-4 text-[#FF8000]" />
+                <span>
+                  {lang === 'ar'
+                    ? 'دخول تابلت إدارة الطلبات (برقم سري)'
+                    : 'Bestell-Tablet / Admin öffnen (mit PIN)'}
+                </span>
+              </span>
+              <Lock className="w-3.5 h-3.5 text-[#5A6568]" />
+            </button>
           </div>
         </div>
       </div>

@@ -9,10 +9,13 @@ import {
   MessageCircle,
   Copy,
   Check,
+  CheckCircle2,
   CreditCard,
   ExternalLink,
   ShoppingBag,
   Receipt,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import {
   CartEntry,
@@ -25,6 +28,7 @@ import {
   getEntryUnitPrice,
 } from '@/src/data/kairosData';
 import { CroppedPhoto } from '@/src/components/CroppedPhoto';
+import { createLiveOrder } from '@/src/services/kairosFirebase';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -32,6 +36,7 @@ interface CartDrawerProps {
   cart: CartEntry[];
   onUpdateQty: (entryKey: string, delta: number) => void;
   onClearCart: () => void;
+  onOrderCreated: (orderId: string) => void;
   lang: 'ar' | 'de';
 }
 
@@ -50,6 +55,7 @@ export function CartDrawer({
   cart,
   onUpdateQty,
   onClearCart,
+  onOrderCreated,
   lang,
 }: CartDrawerProps) {
   const paymentLink = KAIROS_INFO.defaultPaymentLink;
@@ -67,8 +73,10 @@ export function CartDrawer({
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'payment_link'>('cash');
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [dispatchedOrder, setDispatchedOrder] = useState<{
+    orderId: string | null;
     orderNumber: string;
     messageText: string;
     whatsappUrl: string;
@@ -185,7 +193,7 @@ export function CartDrawer({
     setTimeout(() => addressInputRef.current?.focus(), 40);
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -209,6 +217,7 @@ export function CartDrawer({
       return;
     }
 
+    setSubmitting(true);
     const orderNumber = `KG-${Math.floor(1000 + Math.random() * 8999)}`;
     const messageText = buildWhatsAppOrderText({
       orderNumber,
@@ -226,7 +235,29 @@ export function CartDrawer({
     });
     const whatsappUrl = buildWhatsAppUrl(messageText);
 
+    let createdOrderId: string | null = null;
+    try {
+      createdOrderId = await createLiveOrder({
+        orderNumber,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        orderMode,
+        address: address.trim(),
+        gpsCoords,
+        paymentMethod,
+        notes,
+        items: cart,
+        totals,
+      });
+      onOrderCreated(createdOrderId);
+    } catch {
+      // Even if offline/transient error occurs, still let user send the WhatsApp message
+    } finally {
+      setSubmitting(false);
+    }
+
     setDispatchedOrder({
+      orderId: createdOrderId,
       orderNumber,
       messageText,
       whatsappUrl,
@@ -235,6 +266,7 @@ export function CartDrawer({
       customerName: customerName.trim(),
       locationLabel: orderMode === 'pickup' ? KAIROS_INFO.address : address.trim(),
     });
+    onClearCart();
   };
 
   const handleCopyMessage = async () => {
@@ -248,9 +280,8 @@ export function CartDrawer({
     }
   };
 
-  const handleNewOrder = () => {
+  const handleTrackOrDone = () => {
     setDispatchedOrder(null);
-    onClearCart();
     onClose();
   };
 
@@ -298,14 +329,38 @@ export function CartDrawer({
           </button>
         </div>
 
-        {/* Post-Order Confirmation & Detailed Invoice View */}
+        {/* Post-Order Confirmation: Live Tablet Delivery + WhatsApp Invoice Dispatch */}
         {dispatchedOrder ? (
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            <div className="p-3.5 rounded-[12px] bg-[#ECFDF3] border border-[#16A34A]/30 text-[13px] font-bold text-[#15803D]">
-              {lang === 'ar'
-                ? 'تم تجهيز الفاتورة التفصيلية لطلبك! اضغط على الزر الأخضر أدناه لإرسالها مباشرة عبر واتساب.'
-                : 'Ihre detaillierte Rechnung ist bereit! Tippen Sie unten auf den grünen Button, um per WhatsApp zu senden.'}
+            <div className="p-3.5 rounded-[12px] bg-[#ECFDF3] border border-[#16A34A]/30 space-y-1">
+              <div className="flex items-center gap-2 text-[13px] font-bold text-[#15803D]">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>
+                  {dispatchedOrder.orderId
+                    ? lang === 'ar'
+                      ? 'وصل طلبك مباشرة إلى تابلت المطعم! يمكنك أيضاً إرسال نسخة عبر واتساب أدناه:'
+                      : 'Ihre Bestellung ist direkt auf dem Restaurant-Tablet eingegangen! Gerne zusätzlich per WhatsApp senden:'
+                    : lang === 'ar'
+                      ? 'تم تجهيز الفاتورة التفصيلية لطلبك! اضغط على الزر الأخضر لإرسالها عبر واتساب:'
+                      : 'Ihre detaillierte Rechnung ist bereit! Tippen Sie unten, um per WhatsApp zu senden.'}
+                </span>
+              </div>
             </div>
+
+            <a
+              href={dispatchedOrder.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full h-12 rounded-[12px] bg-[#16A34A] hover:bg-[#15803D] text-white font-display font-bold text-[14px] flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(22,163,74,0.28)] transition-colors"
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span>
+                {lang === 'ar'
+                  ? `إرسال الفاتورة عبر واتساب (${formatEuro(dispatchedOrder.totals.total)})`
+                  : `Rechnung per WhatsApp senden (${formatEuro(dispatchedOrder.totals.total)})`}
+              </span>
+              <ExternalLink className="w-4 h-4 opacity-80" />
+            </a>
 
             {/* Detailed Receipt Card */}
             <div className="rounded-[12px] bg-white border border-[#EAE5DF] shadow-xs overflow-hidden">
@@ -398,21 +453,6 @@ export function CartDrawer({
               </div>
             </div>
 
-            <a
-              href={dispatchedOrder.whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full h-12 rounded-[12px] bg-[#16A34A] hover:bg-[#15803D] text-white font-display font-bold text-[14px] flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(22,163,74,0.28)] transition-colors"
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span>
-                {lang === 'ar'
-                  ? `إرسال الفاتورة عبر واتساب (${formatEuro(dispatchedOrder.totals.total)})`
-                  : `Rechnung per WhatsApp senden (${formatEuro(dispatchedOrder.totals.total)})`}
-              </span>
-              <ExternalLink className="w-4 h-4 opacity-80" />
-            </a>
-
             {paymentLink.trim() && (
               <a
                 href={paymentLink.trim()}
@@ -460,22 +500,19 @@ export function CartDrawer({
               </pre>
             </div>
 
-            <div className="pt-1 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setDispatchedOrder(null)}
-                className="flex-1 h-11 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] text-[13px] font-semibold transition-colors"
-              >
-                {lang === 'ar' ? 'تعديل الطلب' : 'Bearbeiten'}
-              </button>
-              <button
-                type="button"
-                onClick={handleNewOrder}
-                className="flex-1 h-11 rounded-[12px] bg-[#242E30] hover:bg-[#354245] text-white text-[13px] font-semibold transition-colors"
-              >
-                {lang === 'ar' ? 'طلب جديد' : 'Fertig & Leeren'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleTrackOrDone}
+              className="w-full h-11 rounded-[12px] bg-[#242E30] hover:bg-[#354245] text-white text-[13px] font-bold transition-colors"
+            >
+              {dispatchedOrder.orderId
+                ? lang === 'ar'
+                  ? 'متابعة حالة الطلب المباشرة'
+                  : 'Live-Bestellstatus ansehen'
+                : lang === 'ar'
+                  ? 'إغلاق / طلب جديد'
+                  : 'Schließen / Neue Bestellung'}
+            </button>
           </div>
         ) : cart.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -487,7 +524,7 @@ export function CartDrawer({
             </p>
             <p className="text-[13px] text-[#5A6568] mt-1 max-w-xs">
               {lang === 'ar'
-                ? 'اختر وجباتك ومشروباتك المفضلة لإرسال طلبك عبر واتساب مع الفاتورة التفصيلية.'
+                ? 'اختر وجباتك ومشروباتك المفضلة لإرسال طلبك مباشرة للمطعم وعبر واتساب.'
                 : 'Wählen Sie Speisen und Getränke aus unserer Speisekarte.'}
             </p>
             <button
@@ -611,6 +648,7 @@ export function CartDrawer({
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="0176 ..."
+                    dir="ltr"
                     className="w-full h-11 px-3.5 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[13px] tabular-nums"
                   />
                 </div>
@@ -797,7 +835,7 @@ export function CartDrawer({
               </div>
             </div>
 
-            {/* Footer Totals & WhatsApp Submit */}
+            {/* Footer Totals & Combined Tablet + WhatsApp Submit */}
             <div className="p-5 border-t border-[#EAE5DF] bg-white space-y-2 shrink-0">
               {orderMode === 'delivery' && totals.subtotal < KAIROS_INFO.freeDeliveryThreshold && (
                 <p className="text-[11px] text-[#5A6568]">
@@ -815,13 +853,22 @@ export function CartDrawer({
 
               <button
                 type="submit"
-                className="mt-1 w-full h-12 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white font-display font-bold text-[14px] flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(255,128,0,0.3)] transition-colors"
+                disabled={submitting}
+                className="mt-1 w-full h-12 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] disabled:opacity-60 text-white font-display font-bold text-[14px] flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(255,128,0,0.3)] transition-colors"
               >
-                <MessageCircle className="w-4 h-4" />
+                {submitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
                 <span>
-                  {lang === 'ar'
-                    ? `تأكيد الطلب وإرساله عبر واتساب (${formatEuro(totals.total)})`
-                    : `Bestellung per WhatsApp absenden (${formatEuro(totals.total)})`}
+                  {submitting
+                    ? lang === 'ar'
+                      ? 'جاري إرسال الطلب...'
+                      : 'Bestellung wird gesendet...'
+                    : lang === 'ar'
+                      ? `تأكيد وإرسال الطلب (${formatEuro(totals.total)})`
+                      : `Bestellung absenden (${formatEuro(totals.total)})`}
                 </span>
               </button>
             </div>

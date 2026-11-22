@@ -1,51 +1,137 @@
 {
   "entities": {
-    "AdminUser": {
-      "title": "AdminUser",
-      "description": "Authorized restaurant administrator account allowed to manage live orders.",
+    "KitchenVault": {
+      "title": "KitchenVault",
+      "description": "End-to-end encrypted restaurant tablet configuration storing the public RSA key, PBKDF2/AES-GCM wrapped private key, and SHA-256 admin write secret digest.",
       "type": "object",
       "properties": {
-        "email": {
+        "publicKeyJwk": {
           "type": "string",
-          "format": "email",
-          "maxLength": 120,
-          "description": "Verified administrator email."
+          "minLength": 50,
+          "maxLength": 2000,
+          "description": "RSA-OAEP-256 JWK public key used by customer checkouts to encrypt PII."
         },
-        "role": {
+        "encryptedVaultBlob": {
           "type": "string",
-          "enum": ["admin"],
-          "description": "Administrative role."
+          "minLength": 40,
+          "maxLength": 12000,
+          "description": "AES-256-GCM encrypted JSON containing RSA private key JWK and adminWriteSecret."
+        },
+        "salt": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 128,
+          "description": "Base64 PBKDF2 salt."
+        },
+        "iv": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 64,
+          "description": "Base64 AES-GCM IV."
+        },
+        "adminSecretHash": {
+          "type": "string",
+          "minLength": 32,
+          "maxLength": 128,
+          "description": "Base64 SHA-256 digest of the adminWriteSecret verified on write-only adminProofs."
+        },
+        "lastActionId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Reference to the latest write-only adminProof used to rotate the PIN."
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Server timestamp of creation."
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
         }
       },
-      "required": ["email", "role", "createdAt"]
+      "required": [
+        "publicKeyJwk",
+        "encryptedVaultBlob",
+        "salt",
+        "iv",
+        "adminSecretHash",
+        "lastActionId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminProof": {
+      "title": "AdminProof",
+      "description": "Write-only proof document created atomically in the same batch as an order, complaint, or vault update.",
+      "type": "object",
+      "properties": {
+        "targetType": {
+          "type": "string",
+          "enum": ["order", "complaint", "vault"],
+          "description": "Type of target resource."
+        },
+        "targetId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "description": "ID of target document."
+        },
+        "targetStatus": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Target status or action."
+        },
+        "adminSecret": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "description": "Admin write secret verified via SHA-256 in Firestore Rules."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp."
+        }
+      },
+      "required": ["targetType", "targetId", "targetStatus", "adminSecret", "createdAt"]
     },
     "Order": {
       "title": "Order",
-      "description": "Full customer order and itemized VAT invoice visible exclusively to restaurant administrators.",
+      "description": "Customer order with itemized VAT invoice and E2EE encrypted PII delivered directly to the shop tablet.",
       "type": "object",
       "properties": {
+        "shopId": {
+          "type": "string",
+          "enum": ["kairos_rostock"],
+          "description": "Restaurant channel identifier."
+        },
         "orderNumber": {
           "type": "string",
           "minLength": 3,
           "maxLength": 32,
           "description": "Human-friendly order reference (e.g., KG-4821)."
         },
+        "piiEncrypted": {
+          "type": "boolean",
+          "description": "Whether customer PII is RSA-OAEP + AES-GCM encrypted."
+        },
+        "encryptedPii": {
+          "type": "string",
+          "maxLength": 16000,
+          "description": "Encrypted JSON payload containing customerName, customerPhone, address, gpsText, notes."
+        },
         "customerName": {
           "type": "string",
           "minLength": 1,
           "maxLength": 80,
-          "description": "Customer name."
+          "description": "Masked placeholder when encrypted, or customer name."
         },
         "customerPhone": {
           "type": "string",
-          "minLength": 4,
           "maxLength": 32,
-          "description": "Customer phone number."
+          "description": "Masked placeholder when encrypted, or customer phone."
         },
         "orderMode": {
           "type": "string",
@@ -55,12 +141,12 @@
         "address": {
           "type": "string",
           "maxLength": 240,
-          "description": "Delivery address or pickup label."
+          "description": "Masked placeholder when encrypted, or delivery address."
         },
         "gpsText": {
           "type": "string",
           "maxLength": 64,
-          "description": "Optional latitude,longitude coordinates."
+          "description": "Empty when encrypted, or GPS coordinates."
         },
         "paymentMethod": {
           "type": "string",
@@ -70,7 +156,7 @@
         "notes": {
           "type": "string",
           "maxLength": 300,
-          "description": "Optional order notes."
+          "description": "Empty when encrypted, or order notes."
         },
         "items": {
           "type": "array",
@@ -101,6 +187,11 @@
           "enum": ["pending", "accepted", "preparing", "delivering", "completed", "cancelled"],
           "description": "Current order lifecycle status."
         },
+        "lastActionId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Latest write-only adminProof ID used to authorize status transition."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
@@ -113,7 +204,10 @@
         }
       },
       "required": [
+        "shopId",
         "orderNumber",
+        "piiEncrypted",
+        "encryptedPii",
         "customerName",
         "customerPhone",
         "orderMode",
@@ -128,6 +222,7 @@
         "deliveryFee",
         "total",
         "status",
+        "lastActionId",
         "createdAt",
         "updatedAt"
       ]
@@ -185,25 +280,39 @@
     },
     "Complaint": {
       "title": "Complaint",
-      "description": "Customer complaint or management feedback visible exclusively to restaurant administrators.",
+      "description": "Customer complaint or management feedback with E2EE encrypted details visible only after PIN unlock.",
       "type": "object",
       "properties": {
+        "shopId": {
+          "type": "string",
+          "enum": ["kairos_rostock"],
+          "description": "Restaurant channel identifier."
+        },
         "complaintNumber": {
           "type": "string",
           "minLength": 3,
           "maxLength": 32,
           "description": "Human-friendly complaint reference (e.g., CMP-4821)."
         },
+        "piiEncrypted": {
+          "type": "boolean",
+          "description": "Whether complaint details are encrypted."
+        },
+        "encryptedPii": {
+          "type": "string",
+          "maxLength": 16000,
+          "description": "Encrypted JSON payload containing customerName, customerPhone, message."
+        },
         "customerName": {
           "type": "string",
           "minLength": 1,
           "maxLength": 80,
-          "description": "Customer name."
+          "description": "Masked or plain customer name."
         },
         "customerPhone": {
           "type": "string",
           "maxLength": 32,
-          "description": "Optional customer phone number for follow-up."
+          "description": "Masked or plain customer phone."
         },
         "orderNumber": {
           "type": "string",
@@ -217,9 +326,9 @@
         },
         "message": {
           "type": "string",
-          "minLength": 3,
+          "minLength": 1,
           "maxLength": 600,
-          "description": "Complaint or feedback description."
+          "description": "Masked placeholder when encrypted, or complaint text."
         },
         "status": {
           "type": "string",
@@ -230,6 +339,11 @@
           "type": "string",
           "maxLength": 300,
           "description": "Internal management note."
+        },
+        "lastActionId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Latest write-only adminProof ID."
         },
         "createdAt": {
           "type": "string",
@@ -243,7 +357,10 @@
         }
       },
       "required": [
+        "shopId",
         "complaintNumber",
+        "piiEncrypted",
+        "encryptedPii",
         "customerName",
         "customerPhone",
         "orderNumber",
@@ -251,19 +368,24 @@
         "message",
         "status",
         "adminNote",
+        "lastActionId",
         "createdAt",
         "updatedAt"
       ]
     }
   },
   "firestore": {
-    "/admins/{uid}": {
-      "schema": { "$ref": "#/entities/AdminUser" },
-      "description": "Authorized restaurant admin documents."
+    "/kitchenVault/{vaultId}": {
+      "schema": { "$ref": "#/entities/KitchenVault" },
+      "description": "Public RSA key and PIN-encrypted private vault for the restaurant tablet."
+    },
+    "/adminProofs/{proofId}": {
+      "schema": { "$ref": "#/entities/AdminProof" },
+      "description": "Write-only authorization proofs checked by SHA-256 digest in Firestore Rules."
     },
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
-      "description": "Full customer orders and PII invoices restricted to restaurant admins."
+      "description": "Live customer orders delivered directly to the restaurant tablet."
     },
     "/orderTracking/{orderId}": {
       "schema": { "$ref": "#/entities/OrderTracking" },
@@ -271,7 +393,7 @@
     },
     "/complaints/{complaintId}": {
       "schema": { "$ref": "#/entities/Complaint" },
-      "description": "Customer complaints submitted from the Management & Complaints view, readable and manageable exclusively by restaurant admins."
+      "description": "Customer complaints submitted from the Management & Complaints modal."
     }
   }
 }

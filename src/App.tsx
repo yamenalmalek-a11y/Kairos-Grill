@@ -12,6 +12,8 @@ import {
   ArrowDown,
   Utensils,
   ExternalLink,
+  MessageSquareWarning,
+  Tablet,
 } from 'lucide-react';
 import {
   CartEntry,
@@ -32,6 +34,9 @@ import { OfflineIndicator } from '@/src/components/OfflineIndicator';
 import { VideoShowcase } from '@/src/components/VideoShowcase';
 import { PWAInstallButton } from '@/src/components/PWAInstallButton';
 import { IntroVideoModal } from '@/src/components/IntroVideoModal';
+import { AdminDashboard } from '@/src/components/AdminDashboard';
+import { CustomerOrderTracker } from '@/src/components/CustomerOrderTracker';
+import { ManagementModal } from '@/src/components/ManagementModal';
 
 function makeCartKey(dishId: string, variant?: DishVariant): string {
   return variant ? `${dishId}__${variant.id}` : dishId;
@@ -139,6 +144,16 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [showIntroVideo, setShowIntroVideo] = useState(true);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
+  const [isAdminView, setIsAdminView] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('admin') === '1' || window.location.hash === '#admin';
+  });
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('kairos_active_order_id');
+  });
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -224,6 +239,38 @@ export default function App() {
       : `Hallo Kairos Grill Team, ich möchte gerne ein Catering / eine Partyplatte anfragen.`
   );
 
+  const openAdminTablet = () => {
+    setIsAdminView(true);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('admin', '1');
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  const exitAdminTablet = () => {
+    setIsAdminView(false);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('admin');
+      if (url.hash === '#admin') url.hash = '';
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  if (isAdminView) {
+    return (
+      <>
+        <AdminDashboard
+          lang={lang}
+          onChangeLang={setLang}
+          onExitAdmin={exitAdminTablet}
+        />
+        <OfflineIndicator lang={lang} />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F5F2] text-[#242E30]">
       {/* 3-Zone Top Navigation Bar */}
@@ -259,18 +306,18 @@ export default function App() {
               {lang === 'ar' ? 'المشروبات' : 'Getränke'}
             </a>
             <a
-              href="#menu"
-              onClick={() => setActiveCategory('torten')}
-              className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0"
-            >
-              {lang === 'ar' ? 'الحلويات والتورتات' : 'Torten & Café'}
-            </a>
-            <a
               href="#catering"
               className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0"
             >
               {lang === 'ar' ? 'البوفيه والمناسبات' : 'Catering'}
             </a>
+            <button
+              type="button"
+              onClick={() => setIsManagementOpen(true)}
+              className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0"
+            >
+              {lang === 'ar' ? 'الإدارة والشكاوي' : 'Beschwerden'}
+            </button>
             <a
               href="#contact"
               className="hover:text-[#FF8000] transition-colors whitespace-nowrap shrink-0"
@@ -301,6 +348,17 @@ export default function App() {
       </header>
 
       <main id="top" className="flex-1">
+        {activeOrderId && (
+          <CustomerOrderTracker
+            orderId={activeOrderId}
+            lang={lang}
+            onDismiss={() => {
+              localStorage.removeItem('kairos_active_order_id');
+              setActiveOrderId(null);
+            }}
+          />
+        )}
+
         {/* Section 1: Storefront Hero */}
         <section className="bg-white border-b border-[#EAE5DF]">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -319,6 +377,15 @@ export default function App() {
                   <Phone className="w-3.5 h-3.5 text-[#FF8000] shrink-0" />
                   {KAIROS_INFO.phoneDisplay}
                 </a>
+                <span aria-hidden="true">·</span>
+                <button
+                  type="button"
+                  onClick={() => setIsManagementOpen(true)}
+                  className="inline-flex items-center gap-1.5 font-semibold text-[#242E30] hover:text-[#FF8000] transition-colors"
+                >
+                  <MessageSquareWarning className="w-3.5 h-3.5 text-[#FF8000] shrink-0" />
+                  <span>{lang === 'ar' ? 'الإدارة والشكاوي' : 'Verwaltung & Beschwerden'}</span>
+                </button>
               </div>
 
               {/* Language Switcher */}
@@ -357,14 +424,14 @@ export default function App() {
 
                 <h1 className="font-display text-[30px] sm:text-[42px] font-extrabold text-[#242E30] leading-[1.18] tracking-tight [text-wrap:balance]">
                   {lang === 'ar'
-                    ? 'مطعم وكافيه كايروس غريل — اطلب وجبتك الطازجة مباشرة عبر واتساب'
+                    ? 'مطعم وكافيه كايروس غريل — اطلب وجبتك الطازجة مباشرة أو عبر واتساب'
                     : 'Kairos Grill Rostock — Orientalisch, frisch & 100% hausgemacht'}
                 </h1>
 
                 <p className="mt-4 text-[15px] text-[#5A6568] leading-relaxed max-w-xl">
                   {lang === 'ar'
-                    ? 'شيش طاووق مشوي على الأصول، مقبلات وكبة، مناقيش صاج، بيتزا بالفرن الحجري، برغر، باستا، شنيتزل وتورتات منزلية يومياً مع فاتورة تفصيلية مباشرة على واتساب.'
-                    : 'Zartes Shish Tawook, orientalische Mezze, Saj, Steinofen-Pizza, handmade Burger, Pasta, Schnitzel & hausgemachte Torten. Direkt bestellen – Ihre Rechnung geht sofort per WhatsApp ein.'}
+                    ? 'شيش طاووق مشوي على الأصول، مقبلات وكبة، مناقيش صاج، بيتزا بالفرن الحجري، برغر، باستا، شنيتزل وتورتات منزلية يومياً — يصل طلبك فوراً للمطعم مع خيار الإرسال عبر واتساب.'
+                    : 'Zartes Shish Tawook, orientalische Mezze, Saj, Steinofen-Pizza, handmade Burger, Pasta, Schnitzel & hausgemachte Torten. Direkt bestellen – ans Restaurant-Tablet & per WhatsApp.'}
                 </p>
 
                 {/* Hours Summary */}
@@ -790,14 +857,24 @@ export default function App() {
                   </a>
                   <p className="text-[12px] text-[#5A6568] mt-0.5">
                     {lang === 'ar'
-                      ? 'تستلمون كل الطلبات فوراً على هذا الرقم'
-                      : 'Bestellungen gehen direkt per WhatsApp ein'}
+                      ? 'تصل الطلبات لتابلت المطعم وعبر واتساب على هذا الرقم'
+                      : 'Bestellungen gehen ans Tablet & per WhatsApp ein'}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <PWAInstallButton lang={lang} variant="secondary" />
+                <button
+                  type="button"
+                  onClick={() => setIsManagementOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] border border-[#EAE5DF] font-display font-bold text-[13px] transition-colors whitespace-nowrap shrink-0"
+                >
+                  <MessageSquareWarning className="w-4 h-4 text-[#FF8000]" />
+                  <span>
+                    {lang === 'ar' ? 'الإدارة والشكاوي' : 'Verwaltung & Beschwerden'}
+                  </span>
+                </button>
                 <a
                   href={KAIROS_INFO.facebookUrl}
                   target="_blank"
@@ -831,6 +908,28 @@ export default function App() {
             © {new Date().getFullYear()} Kairos Grill · {KAIROS_INFO.address}
           </p>
           <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setIsManagementOpen(true)}
+              className="inline-flex items-center gap-1.5 font-semibold text-[#242E30] hover:text-[#FF8000] transition-colors"
+            >
+              <MessageSquareWarning className="w-3.5 h-3.5 text-[#FF8000]" />
+              <span>
+                {lang === 'ar' ? 'الإدارة والشكاوي' : 'Verwaltung & Beschwerden'}
+              </span>
+            </button>
+            <span aria-hidden="true">·</span>
+            <button
+              type="button"
+              onClick={openAdminTablet}
+              className="inline-flex items-center gap-1.5 font-semibold text-[#242E30] hover:text-[#FF8000] transition-colors"
+            >
+              <Tablet className="w-3.5 h-3.5 text-[#FF8000]" />
+              <span>
+                {lang === 'ar' ? 'تابلت استقبال الطلبات (برقم سري)' : 'Bestell-Tablet (Admin)'}
+              </span>
+            </button>
+            <span aria-hidden="true">·</span>
             <a
               href={KAIROS_INFO.facebookUrl}
               target="_blank"
@@ -876,7 +975,18 @@ export default function App() {
         cart={cart}
         onUpdateQty={handleUpdateQty}
         onClearCart={() => setCart([])}
+        onOrderCreated={(orderId) => {
+          localStorage.setItem('kairos_active_order_id', orderId);
+          setActiveOrderId(orderId);
+        }}
         lang={lang}
+      />
+
+      <ManagementModal
+        isOpen={isManagementOpen}
+        onClose={() => setIsManagementOpen(false)}
+        lang={lang}
+        onOpenAdminDashboard={openAdminTablet}
       />
 
       <IntroVideoModal
