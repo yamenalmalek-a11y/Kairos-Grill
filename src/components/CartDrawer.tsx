@@ -28,7 +28,7 @@ import {
   getEntryUnitPrice,
 } from '@/src/data/kairosData';
 import { CroppedPhoto } from '@/src/components/CroppedPhoto';
-import { createLiveOrder } from '@/src/services/kairosFirebase';
+import { createLiveOrder, prefetchKitchenPublicKey } from '@/src/services/kairosFirebase';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -126,13 +126,37 @@ export function CartDrawer({
   };
 
   useEffect(() => {
+    if (isOpen && cart.length > 0) {
+      prefetchKitchenPublicKey();
+    }
     if (!isOpen) {
       stopGpsWatch();
     }
     return () => {
       stopGpsWatch();
     };
-  }, [isOpen]);
+  }, [isOpen, cart.length]);
+
+  // Pre-resolve coordinates silently in background while customer finishes form
+  useEffect(() => {
+    if (!isOpen || orderMode !== 'delivery' || gpsCoords) return;
+    const clean = address.trim();
+    if (clean.length < 5 || /^\d+\.\d+,\s*\d+\.\d+$/.test(clean)) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void forwardGeocodeRostock(clean).then((coords) => {
+        if (!cancelled && coords) {
+          setGpsCoords((prev) => prev ?? coords);
+        }
+      });
+    }, 650);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isOpen, orderMode, address, gpsCoords]);
 
   // Live Rostock street & house-number autocomplete (OpenStreetMap Photon bounded to Rostock)
   useEffect(() => {
@@ -262,7 +286,7 @@ export function CartDrawer({
     const clean = queryText.trim();
     if (!clean) return null;
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 1400);
+    const timeoutId = window.setTimeout(() => controller.abort(), 500);
     try {
       const qWithCity = clean.toLowerCase().includes('rostock') ? clean : `${clean}, Rostock`;
       const res = await fetch(

@@ -36,6 +36,7 @@ import { IntroVideoModal } from '@/src/components/IntroVideoModal';
 import { AdminDashboard } from '@/src/components/AdminDashboard';
 import { CustomerOrderTracker } from '@/src/components/CustomerOrderTracker';
 import { ManagementModal } from '@/src/components/ManagementModal';
+import { prefetchKitchenPublicKey } from '@/src/services/kairosFirebase';
 
 function makeCartKey(dishId: string, variant?: DishVariant): string {
   return variant ? `${dishId}__${variant.id}` : dishId;
@@ -177,6 +178,9 @@ export default function App() {
     const key = makeCartKey(dish.id, chosenVariant);
 
     setCart((prev) => {
+      if (prev.length === 0) {
+        prefetchKitchenPublicKey();
+      }
       const existing = prev.find((entry) => entry.key === key);
       if (existing) {
         return prev.map((entry) =>

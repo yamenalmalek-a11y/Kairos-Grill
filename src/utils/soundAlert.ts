@@ -19,6 +19,11 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
+export function isTabletAudioLocked(): boolean {
+  if (!sharedAudioCtx) return true;
+  return sharedAudioCtx.state !== 'running';
+}
+
 export function unlockTabletAudio(): boolean {
   const ctx = getAudioContext();
   if (!ctx) return false;
@@ -33,7 +38,7 @@ export function unlockTabletAudio(): boolean {
     gain.connect(ctx.destination);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.02);
-    return true;
+    return ctx.state === 'running';
   } catch {
     return false;
   }

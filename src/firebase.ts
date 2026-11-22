@@ -1,9 +1,48 @@
 import { initializeApp } from 'firebase/app';
-import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
+import {
+  Firestore,
+  doc,
+  enableNetwork,
+  getDocFromServer,
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import firebaseConfig from '@/firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+function createOptimizedFirestore(): Firestore {
+  try {
+    return initializeFirestore(
+      app,
+      {
+        experimentalAutoDetectLongPolling: true,
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      },
+      firebaseConfig.firestoreDatabaseId
+    );
+  } catch {
+    try {
+      return initializeFirestore(
+        app,
+        { experimentalAutoDetectLongPolling: true },
+        firebaseConfig.firestoreDatabaseId
+      );
+    } catch {
+      return getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    }
+  }
+}
+
+export const db = createOptimizedFirestore();
+
+export function wakeFirestoreConnection(): void {
+  void enableNetwork(db).catch(() => {});
+}
 
 export enum OperationType {
   CREATE = 'create',

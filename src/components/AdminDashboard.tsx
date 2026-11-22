@@ -15,6 +15,7 @@ import {
   MessageSquareWarning,
   Phone,
   Printer,
+  RefreshCw,
   ShieldCheck,
   Smartphone,
   Trash2,
@@ -22,6 +23,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
+import { wakeFirestoreConnection } from '@/src/firebase';
 import { KAIROS_ASSETS, formatEuro } from '@/src/data/kairosData';
 import { usePWAInstall } from '@/src/hooks/usePWAInstall';
 import {
@@ -44,7 +46,11 @@ import {
   UnlockedKitchenCredentials,
   importCredentialsFromJwk,
 } from '@/src/utils/kitchenCrypto';
-import { playNewOrderBell, unlockTabletAudio } from '@/src/utils/soundAlert';
+import {
+  isTabletAudioLocked,
+  playNewOrderBell,
+  unlockTabletAudio,
+} from '@/src/utils/soundAlert';
 import { ReceiptPaperWidth } from '@/src/utils/thermalPrinter';
 import {
   ThermalReceiptModal,
@@ -178,6 +184,9 @@ export function AdminDashboard({
   const [syncError, setSyncError] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [confirmDeleteOrderId, setConfirmDeleteOrderId] = useState<string | null>(null);
+  const [syncEpoch, setSyncEpoch] = useState(0);
+  const [isSyncRefreshing, setIsSyncRefreshing] = useState(false);
+  const [audioLocked, setAudioLocked] = useState(false);
 
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
@@ -189,10 +198,20 @@ export function AdminDashboard({
     setShowInstallGuide(true);
   };
 
+  const triggerManualSync = () => {
+    wakeFirestoreConnection();
+    setIsSyncRefreshing(true);
+    setSyncEpoch((prev) => prev + 1);
+    window.setTimeout(() => {
+      setIsSyncRefreshing(false);
+    }, 650);
+  };
+
   const initialOrdersLoadedRef = useRef(false);
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
   const soundEnabledRef = useRef(soundEnabled);
   const langRef = useRef(lang);
+  const hiddenSinceRef = useRef<number | null>(null);
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
@@ -247,7 +266,7 @@ export function AdminDashboard({
     };
   }, []);
 
-  // Keep shop tablet screen awake while AdminDashboard is unlocked
+  // Keep shop tablet screen awake while AdminDashboard is unlocked & re-acquire after sleep
   useEffect(() => {
     if (!credentials || typeof navigator === 'undefined' || !('wakeLock' in navigator)) {
       return;
@@ -258,18 +277,73 @@ export function AdminDashboard({
         const nav = navigator as unknown as {
           wakeLock?: { request: (type: string) => Promise<{ release: () => Promise<void> }> };
         };
-        if (nav.wakeLock) {
+        if (nav.wakeLock && document.visibilityState === 'visible') {
           sentinel = await nav.wakeLock.request('screen');
         }
       } catch {
         // Ignore if battery saver / unsupported
       }
     };
+    const handleVisibilityWake = () => {
+      if (document.visibilityState === 'visible') {
+        void req();
+      }
+    };
     void req();
+    document.addEventListener('visibilitychange', handleVisibilityWake);
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityWake);
       if (sentinel) {
         void sentinel.release().catch(() => {});
       }
+    };
+  }, [credentials]);
+
+  // Auto-unlock browser audio on first tap & auto-reconnect Firestore after sleep/network drop
+  useEffect(() => {
+    if (!credentials || typeof window === 'undefined') return;
+
+    setAudioLocked(isTabletAudioLocked());
+
+    const handleFirstInteraction = () => {
+      unlockTabletAudio();
+      window.setTimeout(() => {
+        setAudioLocked(isTabletAudioLocked());
+      }, 120);
+    };
+
+    const handleOnlineReconnect = () => {
+      wakeFirestoreConnection();
+      setSyncEpoch((prev) => prev + 1);
+    };
+
+    const handleVisibilityReconnect = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenSinceRef.current = Date.now();
+        return;
+      }
+      if (document.visibilityState === 'visible') {
+        wakeFirestoreConnection();
+        const hiddenDuration = hiddenSinceRef.current ? Date.now() - hiddenSinceRef.current : 0;
+        hiddenSinceRef.current = null;
+        if (hiddenDuration >= 8000) {
+          setSyncEpoch((prev) => prev + 1);
+        }
+      }
+    };
+
+    window.addEventListener('pointerdown', handleFirstInteraction, { passive: true });
+    window.addEventListener('touchstart', handleFirstInteraction, { passive: true });
+    window.addEventListener('keydown', handleFirstInteraction, { passive: true });
+    window.addEventListener('online', handleOnlineReconnect);
+    document.addEventListener('visibilitychange', handleVisibilityReconnect);
+
+    return () => {
+      window.removeEventListener('pointerdown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('online', handleOnlineReconnect);
+      document.removeEventListener('visibilitychange', handleVisibilityReconnect);
     };
   }, [credentials]);
 
@@ -277,6 +351,7 @@ export function AdminDashboard({
   useEffect(() => {
     if (!credentials) return;
     setSyncError(null);
+    wakeFirestoreConnection();
 
     const unsubOrders = subscribeAdminOrders(
       credentials.privateKey,
@@ -292,23 +367,33 @@ export function AdminDashboard({
             (o) => o.status === 'pending' && !seenOrderIdsRef.current.has(o.id)
           );
           incomingOrders.forEach((o) => seenOrderIdsRef.current.add(o.id));
-          if (hasBrandNewPending && isSoundOn) {
-            playNewOrderBell();
-            if (
-              typeof window !== 'undefined' &&
-              'Notification' in window &&
-              Notification.permission === 'granted'
-            ) {
+          if (hasBrandNewPending) {
+            if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
               try {
-                new Notification('Kairos Grill · Neue Bestellung!', {
-                  body:
-                    currentLang === 'ar'
-                      ? 'وصل طلب جديد إلى شاشة المطعم الآن'
-                      : 'Eine neue Bestellung ist soeben eingegangen.',
-                  icon: '/pwa-192x192.png',
-                });
+                navigator.vibrate([350, 120, 350, 120, 450]);
               } catch {
-                // Ignore mobile notification fallback
+                // Ignore unsupported vibrate
+              }
+            }
+            if (isSoundOn) {
+              playNewOrderBell();
+              setAudioLocked(isTabletAudioLocked());
+              if (
+                typeof window !== 'undefined' &&
+                'Notification' in window &&
+                Notification.permission === 'granted'
+              ) {
+                try {
+                  new Notification('Kairos Grill · Neue Bestellung!', {
+                    body:
+                      currentLang === 'ar'
+                        ? 'وصل طلب جديد إلى شاشة المطعم الآن'
+                        : 'Eine neue Bestellung ist soeben eingegangen.',
+                    icon: '/pwa-192x192.png',
+                  });
+                } catch {
+                  // Ignore mobile notification fallback
+                }
               }
             }
           }
@@ -334,7 +419,7 @@ export function AdminDashboard({
       unsubOrders();
       unsubComplaints();
     };
-  }, [credentials]);
+  }, [credentials, syncEpoch]);
 
   // Continuous chime every 8 seconds while any order is unaccepted ('pending')
   const pendingCount = orders.filter((o) => o.status === 'pending').length;
@@ -863,6 +948,37 @@ export function AdminDashboard({
               </button>
             )}
 
+            {soundEnabled && audioLocked && (
+              <button
+                type="button"
+                onClick={() => {
+                  unlockTabletAudio();
+                  playNewOrderBell();
+                  window.setTimeout(() => {
+                    setAudioLocked(isTabletAudioLocked());
+                  }, 120);
+                }}
+                className="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-[12px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[11px] sm:text-[12px] font-extrabold inline-flex items-center gap-1.5 transition-colors animate-pulse"
+              >
+                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>
+                  {lang === 'ar' ? 'اضغط لتفعيل صوت الجرس' : 'Ton aktivieren'}
+                </span>
+              </button>
+            )}
+
+            {/* Instant Manual Sync Refresh */}
+            <button
+              type="button"
+              onClick={triggerManualSync}
+              className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-[12px] bg-[#1C2024] hover:bg-[#23282D] border border-[#262B31] text-[11px] sm:text-[12px] font-bold text-[#F4F5F6] inline-flex items-center gap-1.5 transition-colors"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 text-[#FF8000] ${isSyncRefreshing ? 'animate-spin' : ''}`}
+              />
+              <span>{lang === 'ar' ? 'تحديث' : 'Sync'}</span>
+            </button>
+
             {/* Sound Alert Toggle */}
             <button
               type="button"
@@ -871,6 +987,9 @@ export function AdminDashboard({
                 const next = !soundEnabled;
                 setSoundEnabled(next);
                 if (next) playNewOrderBell();
+                window.setTimeout(() => {
+                  setAudioLocked(isTabletAudioLocked());
+                }, 120);
               }}
               className={`h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-[12px] text-[11px] sm:text-[12px] font-bold inline-flex items-center gap-1.5 border transition-colors ${
                 soundEnabled

@@ -195,18 +195,36 @@ export async function importCredentialsFromJwk(
   return { privateKey, privateKeyJwk, adminWriteSecret };
 }
 
-export async function encryptPiiPayload(
-  publicKeyJwkString: string,
-  payloadObj: unknown
-): Promise<string> {
+const rsaPublicKeyCache = new Map<string, CryptoKey>();
+
+async function getImportedRsaPublicKey(publicKeyJwkString: string): Promise<CryptoKey> {
+  const cached = rsaPublicKeyCache.get(publicKeyJwkString);
+  if (cached) return cached;
   const publicJwk = JSON.parse(publicKeyJwkString) as JsonWebKey;
-  const rsaPublicKey = await crypto.subtle.importKey(
+  const key = await crypto.subtle.importKey(
     'jwk',
     publicJwk,
     { name: 'RSA-OAEP', hash: 'SHA-256' },
     false,
     ['encrypt']
   );
+  rsaPublicKeyCache.set(publicKeyJwkString, key);
+  return key;
+}
+
+export async function warmupRsaPublicKey(publicKeyJwkString: string): Promise<void> {
+  try {
+    await getImportedRsaPublicKey(publicKeyJwkString);
+  } catch {
+    // Ignore malformed key during background warmup
+  }
+}
+
+export async function encryptPiiPayload(
+  publicKeyJwkString: string,
+  payloadObj: unknown
+): Promise<string> {
+  const rsaPublicKey = await getImportedRsaPublicKey(publicKeyJwkString);
 
   const aesKey = await crypto.subtle.generateKey(
     { name: 'AES-GCM', length: 256 },

@@ -5,6 +5,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocFromServer,
   limit,
   onSnapshot,
   query,
@@ -23,10 +24,51 @@ import {
   generateKitchenVaultForPin,
   reencryptVaultForNewPin,
   unlockKitchenVaultWithPin,
+  warmupRsaPublicKey,
 } from '@/src/utils/kitchenCrypto';
 
 export const SHOP_ID = 'kairos_rostock' as const;
 const VAULT_DOC_ID = 'rostock';
+
+let cachedVaultPublicKeyJwk: string | null = null;
+const decryptedOrderCache = new Map<
+  string,
+  {
+    ciphertext: string;
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    gpsText: string;
+    notes: string;
+  }
+>();
+const decryptedComplaintCache = new Map<
+  string,
+  {
+    ciphertext: string;
+    customerName: string;
+    customerPhone: string;
+    message: string;
+  }
+>();
+
+async function getVaultPublicKeyJwkFast(): Promise<string | null> {
+  if (cachedVaultPublicKeyJwk) return cachedVaultPublicKeyJwk;
+  const vault = await fetchKitchenVault();
+  if (vault?.publicKeyJwk) {
+    cachedVaultPublicKeyJwk = vault.publicKeyJwk;
+    return vault.publicKeyJwk;
+  }
+  return null;
+}
+
+export function prefetchKitchenPublicKey(): void {
+  void getVaultPublicKeyJwkFast().then((jwk) => {
+    if (jwk) {
+      void warmupRsaPublicKey(jwk);
+    }
+  });
+}
 
 export type OrderStatus =
   | 'pending'
@@ -147,6 +189,16 @@ export async function fetchKitchenVault(): Promise<KitchenVaultDoc | null> {
   }
 }
 
+async function fetchKitchenVaultFresh(): Promise<KitchenVaultDoc | null> {
+  try {
+    const snap = await getDocFromServer(doc(db, 'kitchenVault', VAULT_DOC_ID));
+    if (!snap.exists()) return null;
+    return snap.data() as KitchenVaultDoc;
+  } catch {
+    return fetchKitchenVault();
+  }
+}
+
 export async function initializeKitchenVault(
   pin: string
 ): Promise<UnlockedKitchenCredentials> {
@@ -158,6 +210,10 @@ export async function initializeKitchenVault(
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    if (vault.publicKeyJwk) {
+      cachedVaultPublicKeyJwk = vault.publicKeyJwk;
+      void warmupRsaPublicKey(vault.publicKeyJwk);
+    }
     return credentials;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, `kitchenVault/${VAULT_DOC_ID}`);
@@ -167,7 +223,7 @@ export async function initializeKitchenVault(
 export async function verifyAndUnlockKitchenVault(
   pin: string
 ): Promise<UnlockedKitchenCredentials> {
-  const vault = await fetchKitchenVault();
+  const vault = await fetchKitchenVaultFresh();
   if (!vault) {
     throw new Error('VAULT_NOT_INITIALIZED');
   }
@@ -244,13 +300,13 @@ export async function createLiveOrder(params: {
     : '';
   const cleanNotes = (params.notes || '').trim().slice(0, 300);
 
-  const vault = await fetchKitchenVault();
+  const publicKeyJwk = await getVaultPublicKeyJwkFast();
   let piiEncrypted = false;
   let encryptedPii = '';
 
-  if (vault?.publicKeyJwk) {
+  if (publicKeyJwk) {
     try {
-      encryptedPii = await encryptPiiPayload(vault.publicKeyJwk, {
+      encryptedPii = await encryptPiiPayload(publicKeyJwk, {
         customerName: cleanName,
         customerPhone: cleanPhone,
         address: cleanAddress,
@@ -322,6 +378,18 @@ export async function decryptOrderRecord(
   if (!order.piiEncrypted || !order.encryptedPii) {
     return order;
   }
+  const cached = decryptedOrderCache.get(order.id);
+  if (cached && cached.ciphertext === order.encryptedPii) {
+    return {
+      ...order,
+      customerName: cached.customerName,
+      customerPhone: cached.customerPhone,
+      address: cached.address,
+      gpsText: cached.gpsText,
+      notes: cached.notes,
+    };
+  }
+
   const pii = await decryptPiiPayload<{
     customerName?: string;
     customerPhone?: string;
@@ -331,13 +399,21 @@ export async function decryptOrderRecord(
   }>(privateKey, order.encryptedPii);
 
   if (!pii) return order;
-  return {
-    ...order,
+  const resolved = {
     customerName: pii.customerName || order.customerName,
     customerPhone: pii.customerPhone || order.customerPhone,
     address: pii.address || order.address,
     gpsText: pii.gpsText ?? order.gpsText,
     notes: pii.notes ?? order.notes,
+  };
+  decryptedOrderCache.set(order.id, {
+    ciphertext: order.encryptedPii,
+    ...resolved,
+  });
+
+  return {
+    ...order,
+    ...resolved,
   };
 }
 
@@ -376,7 +452,7 @@ export function subscribeAdminOrders(
   onData: (orders: OrderRecord[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe {
-  const q = query(collection(db, 'orders'), where('shopId', '==', SHOP_ID), limit(150));
+  const q = query(collection(db, 'orders'), where('shopId', '==', SHOP_ID), limit(250));
   return onSnapshot(
     q,
     (snapshot) => {
@@ -505,13 +581,13 @@ export async function createComplaint(params: {
   const cleanPhone = (params.customerPhone || '').trim().slice(0, 32);
   const cleanMessage = params.message.trim().slice(0, 600);
 
-  const vault = await fetchKitchenVault();
+  const publicKeyJwk = await getVaultPublicKeyJwkFast();
   let piiEncrypted = false;
   let encryptedPii = '';
 
-  if (vault?.publicKeyJwk) {
+  if (publicKeyJwk) {
     try {
-      encryptedPii = await encryptPiiPayload(vault.publicKeyJwk, {
+      encryptedPii = await encryptPiiPayload(publicKeyJwk, {
         customerName: cleanName,
         customerPhone: cleanPhone,
         message: cleanMessage,
@@ -567,17 +643,33 @@ export function subscribeAdminComplaints(
       void Promise.all(
         rawList.map(async (c) => {
           if (!c.piiEncrypted || !c.encryptedPii) return c;
+          const cached = decryptedComplaintCache.get(c.id);
+          if (cached && cached.ciphertext === c.encryptedPii) {
+            return {
+              ...c,
+              customerName: cached.customerName,
+              customerPhone: cached.customerPhone,
+              message: cached.message,
+            };
+          }
           const pii = await decryptPiiPayload<{
             customerName?: string;
             customerPhone?: string;
             message?: string;
           }>(privateKey, c.encryptedPii);
           if (!pii) return c;
-          return {
-            ...c,
+          const resolved = {
             customerName: pii.customerName || c.customerName,
             customerPhone: pii.customerPhone ?? c.customerPhone,
             message: pii.message || c.message,
+          };
+          decryptedComplaintCache.set(c.id, {
+            ciphertext: c.encryptedPii,
+            ...resolved,
+          });
+          return {
+            ...c,
+            ...resolved,
           };
         })
       ).then((decrypted) => {
