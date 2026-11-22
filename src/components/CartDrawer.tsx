@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import {
   X,
   Plus,
@@ -49,6 +49,28 @@ const ROSTOCK_AREAS = [
   'KTV, 18057 Rostock',
 ];
 
+interface AddressSuggestion {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+const ROSTOCK_BOUNDS = {
+  minLat: 54.01,
+  maxLat: 54.22,
+  minLon: 11.96,
+  maxLon: 12.26,
+};
+
+function isInsideRostockArea(lat: number, lng: number): boolean {
+  return (
+    lat >= ROSTOCK_BOUNDS.minLat &&
+    lat <= ROSTOCK_BOUNDS.maxLat &&
+    lng >= ROSTOCK_BOUNDS.minLon &&
+    lng <= ROSTOCK_BOUNDS.maxLon
+  );
+}
+
 export function CartDrawer({
   isOpen,
   onClose,
@@ -60,6 +82,9 @@ export function CartDrawer({
 }: CartDrawerProps) {
   const paymentLink = KAIROS_INFO.defaultPaymentLink;
   const addressInputRef = useRef<HTMLInputElement>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const watchTimerRef = useRef<number | null>(null);
+  const skipNextAutocompleteRef = useRef(false);
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -67,9 +92,11 @@ export function CartDrawer({
   const [address, setAddress] = useState('');
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsStatus, setGpsStatus] = useState<{
-    tone: 'loading' | 'success' | 'fallback';
+    tone: 'loading' | 'success' | 'warn' | 'fallback';
     text: string;
   } | null>(null);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'payment_link'>('cash');
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -87,28 +114,226 @@ export function CartDrawer({
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const stopGpsWatch = () => {
+    if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    if (watchTimerRef.current !== null) {
+      window.clearTimeout(watchTimerRef.current);
+      watchTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      stopGpsWatch();
+    }
+    return () => {
+      stopGpsWatch();
+    };
+  }, [isOpen]);
+
+  // Live Rostock street & house-number autocomplete (OpenStreetMap Photon bounded to Rostock)
+  useEffect(() => {
+    if (!isOpen || orderMode !== 'delivery') {
+      setSuggestions([]);
+      return;
+    }
+    if (skipNextAutocompleteRef.current) {
+      skipNextAutocompleteRef.current = false;
+      return;
+    }
+    const clean = address.trim();
+    if (clean.length < 3 || /^\d+\.\d+,\s*\d+\.\d+$/.test(clean)) {
+      setSuggestions([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://photon.komoot.io/api/?q=${encodeURIComponent(clean)}&lat=54.0924&lon=12.0991&limit=6&lang=de`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          features?: Array<{
+            geometry?: { coordinates?: [number, number] };
+            properties?: {
+              street?: string;
+              name?: string;
+              housenumber?: string;
+              postcode?: string;
+              city?: string;
+              district?: string;
+            };
+          }>;
+        };
+        const items: AddressSuggestion[] = [];
+        const seen = new Set<string>();
+        for (const f of data.features ?? []) {
+          const coords = f.geometry?.coordinates;
+          const p = f.properties;
+          if (!coords || !p) continue;
+          const [lng, lat] = coords;
+          if (!isInsideRostockArea(lat, lng)) continue;
+          const streetPart = p.street
+            ? [p.street, p.housenumber].filter(Boolean).join(' ')
+            : [p.name, p.housenumber].filter(Boolean).join(' ');
+          const cityPart = [p.postcode, p.city || 'Rostock'].filter(Boolean).join(' ');
+          const label = [streetPart, cityPart].filter(Boolean).join(', ');
+          if (!label || seen.has(label)) continue;
+          seen.add(label);
+          items.push({ label, lat, lng });
+          if (items.length >= 5) break;
+        }
+        setSuggestions(items);
+      } catch {
+        // Ignore aborted or offline autocomplete requests
+      }
+    }, 320);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [address, isOpen, orderMode]);
+
   if (!isOpen) return null;
 
   const totals = calculateCartTotals(cart, orderMode);
 
-  const reverseGeocode = async (lat: number, lng: number) => {
+  const reverseGeocode = async (lat: number, lng: number): Promise<string | null> => {
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=de`,
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=de`,
         { headers: { Accept: 'application/json' } }
       );
-      if (!res.ok) return null;
-      const data = await res.json();
-      const a = data.address;
-      if (!a) return null;
-      const street = [a.road, a.house_number].filter(Boolean).join(' ');
-      const city = [a.postcode, a.city || a.town || a.village || a.suburb]
-        .filter(Boolean)
-        .join(' ');
+      if (res.ok) {
+        const data = await res.json();
+        const a = data.address;
+        if (a) {
+          const street = [a.road || a.pedestrian || a.footway, a.house_number]
+            .filter(Boolean)
+            .join(' ');
+          const city = [a.postcode, a.city || a.town || a.village || a.suburb]
+            .filter(Boolean)
+            .join(' ');
+          const formatted = [street, city].filter(Boolean).join(', ');
+          if (formatted) return formatted;
+        }
+      }
+    } catch {
+      // Fall through to Photon reverse geocoding
+    }
+
+    try {
+      const res2 = await fetch(
+        `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=de`
+      );
+      if (!res2.ok) return null;
+      const data2 = (await res2.json()) as {
+        features?: Array<{
+          properties?: {
+            street?: string;
+            name?: string;
+            housenumber?: string;
+            postcode?: string;
+            city?: string;
+          };
+        }>;
+      };
+      const p = data2.features?.[0]?.properties;
+      if (!p) return null;
+      const street = [p.street || p.name, p.housenumber].filter(Boolean).join(' ');
+      const city = [p.postcode, p.city || 'Rostock'].filter(Boolean).join(' ');
       const formatted = [street, city].filter(Boolean).join(', ');
       return formatted || null;
     } catch {
       return null;
+    }
+  };
+
+  const forwardGeocodeRostock = async (
+    queryText: string
+  ): Promise<{ lat: number; lng: number } | null> => {
+    const clean = queryText.trim();
+    if (!clean) return null;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 1400);
+    try {
+      const qWithCity = clean.toLowerCase().includes('rostock') ? clean : `${clean}, Rostock`;
+      const res = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(qWithCity)}&lat=54.0924&lon=12.0991&limit=3&lang=de`,
+        { signal: controller.signal }
+      );
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        features?: Array<{ geometry?: { coordinates?: [number, number] } }>;
+      };
+      for (const f of data.features ?? []) {
+        const coords = f.geometry?.coordinates;
+        if (!coords) continue;
+        const [lng, lat] = coords;
+        if (isInsideRostockArea(lat, lng)) {
+          return { lat, lng };
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  };
+
+  const applyBestGeoPosition = async (pos: GeolocationPosition) => {
+    const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    const accuracyMeters = Math.round(pos.coords.accuracy || 0);
+
+    // Reject ultra-coarse cell/IP estimates (> 250m) from overwriting a real street address
+    if (accuracyMeters > 250) {
+      setGpsCoords(null);
+      setGpsStatus({
+        tone: 'warn',
+        text:
+          lang === 'ar'
+            ? `إشارة GPS ضعيفة في هذا المكان (±${accuracyMeters} م) وقد لا تكون دقيقة. اكتب اسم الشارع ورقم المنزل واختره من الاقتراحات.`
+            : `GPS-Signal ungenau (±${accuracyMeters} m). Bitte Straße & Hausnummer unten eingeben bzw. aus den Vorschlägen wählen.`,
+      });
+      return;
+    }
+
+    setGpsCoords(coords);
+    const resolvedStreet = await reverseGeocode(coords.lat, coords.lng);
+    if (resolvedStreet) {
+      skipNextAutocompleteRef.current = true;
+      setAddress(resolvedStreet);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    } else if (!address.trim()) {
+      skipNextAutocompleteRef.current = true;
+      setAddress(`${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`);
+    }
+
+    if (accuracyMeters <= 35) {
+      setGpsStatus({
+        tone: 'success',
+        text:
+          lang === 'ar'
+            ? `تم تحديد موقعك بدقة عالية (±${accuracyMeters} م) — تأكد من رقم المنزل أدناه`
+            : `Standort präzise erkannt (±${accuracyMeters} m) — bitte Hausnummer prüfen`,
+      });
+    } else {
+      setGpsStatus({
+        tone: 'warn',
+        text:
+          lang === 'ar'
+            ? `تم تحديد الموقع بدقة متوسطة (±${accuracyMeters} م) — يُنصح بالتأكد من الشارع ورقم المنزل`
+            : `Standort erkannt (±${accuracyMeters} m) — bitte Straße & Hausnummer ggf. korrigieren`,
+      });
     }
   };
 
@@ -118,79 +343,110 @@ export function CartDrawer({
         tone: 'fallback',
         text:
           lang === 'ar'
-            ? 'اختر منطقتك في روستوك أدناه وأضف اسم الشارع ورقم المنزل.'
-            : 'Wählen Sie unten Ihren Stadtteil und ergänzen Sie Straße & Hausnummer.',
+            ? 'اختر منطقتك في روستوك أو اكتب اسم الشارع ورقم المنزل.'
+            : 'Bitte Straße & Hausnummer in Rostock eingeben.',
       });
       return;
     }
 
+    stopGpsWatch();
     setGpsStatus({
       tone: 'loading',
-      text: lang === 'ar' ? 'جاري تحديد موقعك الحالي…' : 'Standort wird ermittelt…',
+      text:
+        lang === 'ar'
+          ? 'جاري التقاط أدق إشارة GPS لموقعك…'
+          : 'Genauer GPS-Standort wird ermittelt…',
     });
 
-    const onGeoSuccess = async (pos: GeolocationPosition) => {
-      const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      setGpsCoords(coords);
-      const coordFallback = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
-      setAddress((prev) => prev.trim() || coordFallback);
+    let bestPos: GeolocationPosition | null = null;
+    let settled = false;
 
-      const resolvedStreet = await reverseGeocode(coords.lat, coords.lng);
-      if (resolvedStreet) {
-        setAddress(resolvedStreet);
+    const finalize = () => {
+      if (settled) return;
+      settled = true;
+      stopGpsWatch();
+      if (bestPos) {
+        void applyBestGeoPosition(bestPos);
       }
-
-      setGpsStatus({
-        tone: 'success',
-        text:
-          lang === 'ar'
-            ? 'تم تحديد موقعك وإرفاق رابط خرائط Google بالطلب'
-            : 'Standort erkannt & Google Maps Link angehängt',
-      });
     };
 
-    const onGeoError = (err: GeolocationPositionError) => {
-      if (err.code === 3) {
-        navigator.geolocation.getCurrentPosition(
-          onGeoSuccess,
-          () => {
-            setGpsStatus({
-              tone: 'fallback',
-              text:
-                lang === 'ar'
-                  ? 'لم يتمكن المتصفح من تحديد GPS تلقائياً. اختر منطقتك أدناه واكتب اسم الشارع.'
-                  : 'Automatische Ortung nicht verfügbar. Bitte Stadtteil unten wählen & Straße eingeben.',
-            });
-          },
-          { enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 }
-        );
+    const handleGeoError = (err: GeolocationPositionError) => {
+      if (bestPos) {
+        finalize();
         return;
       }
-
+      settled = true;
+      stopGpsWatch();
       const inIframe = window.self !== window.top;
       setGpsStatus({
         tone: 'fallback',
-        text: inIframe
-          ? lang === 'ar'
-            ? 'نافذة المعاينة تمنع الوصول للـ GPS تلقائياً (يعمل مباشرة عند الفتح في متصفح الهاتف). اختر الحي أدناه أو اكتب عنوانك.'
-            : 'GPS ist im Vorschaufenster blockiert (funktioniert direkt im Smartphone-Browser). Stadtteil unten wählen oder Adresse eingeben.'
-          : lang === 'ar'
-            ? 'يرجى السماح بالوصول للموقع أو اختيار الحي أدناه وكتابة اسم الشارع.'
-            : 'Bitte Standortfreigabe erlauben oder Stadtteil unten wählen.',
+        text:
+          err.code === 1 && inIframe
+            ? lang === 'ar'
+              ? 'نافذة المعاينة تمنع الوصول للـ GPS تلقائياً (يعمل في المتصفح). اكتب الشارع ورقم المنزل واختره من الاقتراحات.'
+              : 'GPS ist im Vorschaufenster blockiert. Bitte Straße & Hausnummer eingeben.'
+            : lang === 'ar'
+              ? 'تعذر التقاط إشارة GPS دقيقة. اكتب اسم الشارع ورقم المنزل واختره من القائمة.'
+              : 'Kein genaues GPS-Signal verfügbar. Bitte Straße & Hausnummer direkt eingeben.',
       });
     };
 
-    navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError, {
-      enableHighAccuracy: true,
-      timeout: 6000,
-      maximumAge: 30000,
-    });
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) {
+          bestPos = pos;
+        }
+        // Stop early once we achieve true GPS accuracy (<= 25 meters)
+        if (pos.coords.accuracy <= 25) {
+          finalize();
+        }
+      },
+      handleGeoError,
+      {
+        enableHighAccuracy: true,
+        timeout: 9000,
+        maximumAge: 0,
+      }
+    );
+
+    watchTimerRef.current = window.setTimeout(() => {
+      if (bestPos) {
+        finalize();
+      } else {
+        stopGpsWatch();
+        settled = true;
+        setGpsStatus({
+          tone: 'fallback',
+          text:
+            lang === 'ar'
+              ? 'استغرق تحديد GPS وقتاً طويلاً. اكتب اسم الشارع ورقم المنزل في روستوك.'
+              : 'GPS-Ortung dauert zu lange. Bitte Straße & Hausnummer eingeben.',
+        });
+      }
+    }, 6500);
   };
 
   const handleSelectArea = (area: string) => {
+    skipNextAutocompleteRef.current = false;
     setAddress(`${area} — `);
+    setGpsCoords(null);
     setGpsStatus(null);
     setTimeout(() => addressInputRef.current?.focus(), 40);
+  };
+
+  const handleSelectSuggestion = (item: AddressSuggestion) => {
+    skipNextAutocompleteRef.current = true;
+    setAddress(item.label);
+    setGpsCoords({ lat: item.lat, lng: item.lng });
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setGpsStatus({
+      tone: 'success',
+      text:
+        lang === 'ar'
+          ? 'تم تثبيت العنوان وإحداثياته الدقيقة على الخريطة'
+          : 'Exakte Adresse & Kartenkoordinaten übernommen',
+    });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -218,6 +474,11 @@ export function CartDrawer({
     }
 
     setSubmitting(true);
+    let resolvedCoords = gpsCoords;
+    if (orderMode === 'delivery' && !resolvedCoords) {
+      resolvedCoords = await forwardGeocodeRostock(address);
+    }
+
     const orderNumber = `KG-${Math.floor(1000 + Math.random() * 8999)}`;
     const messageText = buildWhatsAppOrderText({
       orderNumber,
@@ -225,7 +486,7 @@ export function CartDrawer({
       customerPhone: customerPhone.trim(),
       orderMode,
       address: address.trim(),
-      gpsCoords,
+      gpsCoords: resolvedCoords,
       paymentMethod,
       paymentLink,
       notes,
@@ -243,7 +504,7 @@ export function CartDrawer({
         customerPhone: customerPhone.trim(),
         orderMode,
         address: address.trim(),
-        gpsCoords,
+        gpsCoords: resolvedCoords,
         paymentMethod,
         notes,
         items: cart,
@@ -675,7 +936,13 @@ export function CartDrawer({
                         ref={addressInputRef}
                         type="text"
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 160)}
+                        onChange={(e) => {
+                          setAddress(e.target.value);
+                          setGpsCoords(null);
+                          setShowSuggestions(true);
+                        }}
                         placeholder={
                           lang === 'ar'
                             ? 'الشارع ورقم المنزل (مثال: Schiffbauerring 59)'
@@ -683,6 +950,26 @@ export function CartDrawer({
                         }
                         className="w-full h-11 pl-9 pr-3.5 rounded-[12px] bg-[#F8F5F2] border border-[#EAE5DF] focus:border-[#FF8000] focus:bg-white focus:outline-none text-[13px]"
                       />
+
+                      {showSuggestions && suggestions.length > 0 && (
+                        <ul className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-[#EAE5DF] rounded-[12px] shadow-lg overflow-hidden divide-y divide-[#EAE5DF]/70">
+                          {suggestions.map((item) => (
+                            <li key={item.label}>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectSuggestion(item);
+                                }}
+                                className="w-full text-start px-3.5 py-2.5 text-[12px] font-semibold text-[#242E30] hover:bg-[#FFF3E6] flex items-center gap-2 transition-colors"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-[#FF8000] shrink-0" />
+                                <span className="truncate">{item.label}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
 
                     {gpsStatus && (
@@ -690,11 +977,29 @@ export function CartDrawer({
                         className={`mt-1.5 text-[11px] leading-snug ${
                           gpsStatus.tone === 'success'
                             ? 'text-[#16A34A] font-medium'
-                            : 'text-[#5A6568]'
+                            : gpsStatus.tone === 'warn'
+                              ? 'text-[#D97706] font-medium'
+                              : 'text-[#5A6568]'
                         }`}
                       >
                         {gpsStatus.text}
                       </p>
+                    )}
+
+                    {gpsCoords && (
+                      <a
+                        href={`https://maps.google.com/?q=${gpsCoords.lat.toFixed(6)},${gpsCoords.lng.toFixed(6)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] hover:underline"
+                      >
+                        <span>
+                          {lang === 'ar'
+                            ? 'معاينة موقعي على الخريطة للتأكد'
+                            : 'Punkt auf Google Maps prüfen'}
+                        </span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     )}
 
                     {/* Quick Rostock Area Shortcuts */}

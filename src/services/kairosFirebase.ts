@@ -2,6 +2,7 @@ import {
   Timestamp,
   Unsubscribe,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   limit,
@@ -438,6 +439,28 @@ export async function updateOrderStatus(
     await batch.commit();
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export async function deleteOrderRecord(
+  order: Pick<OrderRecord, 'id' | 'status' | 'lastActionId'>,
+  adminWriteSecret: string
+): Promise<void> {
+  const path = `orders/${order.id}`;
+  try {
+    const hasDeletableProof =
+      (order.status === 'completed' || order.status === 'cancelled') &&
+      Boolean(order.lastActionId) &&
+      order.lastActionId !== 'created' &&
+      order.lastActionId.length >= 20;
+
+    if (!hasDeletableProof) {
+      await updateOrderStatus(order.id, 'cancelled', adminWriteSecret);
+    }
+
+    await deleteDoc(doc(db, 'orders', order.id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
   }
 }
 

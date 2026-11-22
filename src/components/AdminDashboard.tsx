@@ -15,6 +15,7 @@ import {
   Phone,
   Printer,
   ShieldCheck,
+  Trash2,
   Truck,
   XCircle,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ import {
   ComplaintStatus,
   OrderRecord,
   OrderStatus,
+  deleteOrderRecord,
   fetchKitchenVault,
   initializeKitchenVault,
   rotateKitchenPin,
@@ -146,7 +148,11 @@ export function AdminDashboard({
   const [showPinRotate, setShowPinRotate] = useState(false);
   const [newPin, setNewPin] = useState('');
   const [newPinConfirm, setNewPinConfirm] = useState('');
-  const [pinRotateStatus, setPinRotateStatus] = useState<string | null>(null);
+  const [pinRotateStatus, setPinRotateStatus] = useState<{
+    text: string;
+    isError: boolean;
+  } | null>(null);
+  const [isRotatingPin, setIsRotatingPin] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'orders' | 'complaints'>('orders');
   const [orderFilter, setOrderFilter] = useState<'all' | OrderStatus>('all');
@@ -158,9 +164,22 @@ export function AdminDashboard({
   const [updatingComplaintId, setUpdatingComplaintId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [printOrder, setPrintOrder] = useState<OrderRecord | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [confirmDeleteOrderId, setConfirmDeleteOrderId] = useState<string | null>(null);
 
   const initialOrdersLoadedRef = useRef(false);
   const seenOrderIdsRef = useRef<Set<string>>(new Set());
+  const soundEnabledRef = useRef(soundEnabled);
+  const langRef = useRef(lang);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
 
   // Restore saved tablet session & check vault status
   useEffect(() => {
@@ -236,44 +255,57 @@ export function AdminDashboard({
   // Real-time Firestore subscriptions once unlocked
   useEffect(() => {
     if (!credentials) return;
+    setSyncError(null);
 
-    const unsubOrders = subscribeAdminOrders(credentials.privateKey, (incomingOrders) => {
-      if (!initialOrdersLoadedRef.current) {
-        incomingOrders.forEach((o) => seenOrderIdsRef.current.add(o.id));
-        initialOrdersLoadedRef.current = true;
-      } else {
-        const hasBrandNewPending = incomingOrders.some(
-          (o) => o.status === 'pending' && !seenOrderIdsRef.current.has(o.id)
-        );
-        incomingOrders.forEach((o) => seenOrderIdsRef.current.add(o.id));
-        if (hasBrandNewPending && soundEnabled) {
-          playNewOrderBell();
-          if (
-            typeof window !== 'undefined' &&
-            'Notification' in window &&
-            Notification.permission === 'granted'
-          ) {
-            try {
-              new Notification('Kairos Grill · Neue Bestellung!', {
-                body:
-                  lang === 'ar'
-                    ? 'وصل طلب جديد إلى شاشة المطعم الآن'
-                    : 'Eine neue Bestellung ist soeben eingegangen.',
-                icon: '/pwa-192x192.png',
-              });
-            } catch {
-              // Ignore mobile notification fallback
+    const unsubOrders = subscribeAdminOrders(
+      credentials.privateKey,
+      (incomingOrders) => {
+        setSyncError(null);
+        const currentLang = langRef.current;
+        const isSoundOn = soundEnabledRef.current;
+        if (!initialOrdersLoadedRef.current) {
+          incomingOrders.forEach((o) => seenOrderIdsRef.current.add(o.id));
+          initialOrdersLoadedRef.current = true;
+        } else {
+          const hasBrandNewPending = incomingOrders.some(
+            (o) => o.status === 'pending' && !seenOrderIdsRef.current.has(o.id)
+          );
+          incomingOrders.forEach((o) => seenOrderIdsRef.current.add(o.id));
+          if (hasBrandNewPending && isSoundOn) {
+            playNewOrderBell();
+            if (
+              typeof window !== 'undefined' &&
+              'Notification' in window &&
+              Notification.permission === 'granted'
+            ) {
+              try {
+                new Notification('Kairos Grill · Neue Bestellung!', {
+                  body:
+                    currentLang === 'ar'
+                      ? 'وصل طلب جديد إلى شاشة المطعم الآن'
+                      : 'Eine neue Bestellung ist soeben eingegangen.',
+                  icon: '/pwa-192x192.png',
+                });
+              } catch {
+                // Ignore mobile notification fallback
+              }
             }
           }
         }
+        setOrders(incomingOrders);
+      },
+      (err) => {
+        setSyncError(err.message);
       }
-      setOrders(incomingOrders);
-    });
+    );
 
     const unsubComplaints = subscribeAdminComplaints(
       credentials.privateKey,
       (incomingComplaints) => {
         setComplaints(incomingComplaints);
+      },
+      (err) => {
+        setSyncError((prev) => prev ?? err.message);
       }
     );
 
@@ -281,7 +313,7 @@ export function AdminDashboard({
       unsubOrders();
       unsubComplaints();
     };
-  }, [credentials, soundEnabled, lang]);
+  }, [credentials]);
 
   // Continuous chime every 8 seconds while any order is unaccepted ('pending')
   const pendingCount = orders.filter((o) => o.status === 'pending').length;
@@ -370,37 +402,53 @@ export function AdminDashboard({
 
   const handleRotatePin = async (e: FormEvent) => {
     e.preventDefault();
-    if (!credentials) return;
+    if (!credentials || isRotatingPin) return;
     setPinRotateStatus(null);
 
     if (newPin.trim().length < 4) {
-      setPinRotateStatus(
-        lang === 'ar' ? 'الرقم الجديد يجب أن يكون 4 خانات على الأقل' : 'Mindestens 4 Zeichen'
-      );
+      setPinRotateStatus({
+        text:
+          lang === 'ar'
+            ? 'الرقم الجديد يجب أن يكون 4 خانات على الأقل'
+            : 'Mindestens 4 Zeichen',
+        isError: true,
+      });
       return;
     }
     if (newPin.trim() !== newPinConfirm.trim()) {
-      setPinRotateStatus(
-        lang === 'ar' ? 'الرقمان غير متطابقين' : 'PINs stimmen nicht überein'
-      );
+      setPinRotateStatus({
+        text: lang === 'ar' ? 'الرقمان غير متطابقين' : 'PINs stimmen nicht überein',
+        isError: true,
+      });
       return;
     }
 
+    setIsRotatingPin(true);
     try {
       await rotateKitchenPin(credentials, newPin.trim());
-      setPinRotateStatus(
-        lang === 'ar' ? 'تم تغيير الرقم السري بنجاح!' : 'Admin-PIN erfolgreich geändert!'
-      );
+      setPinRotateStatus({
+        text:
+          lang === 'ar'
+            ? 'تم تغيير الرقم السري بنجاح! استخدم الرقم الجديد في المرات القادمة.'
+            : 'Admin-PIN erfolgreich geändert!',
+        isError: false,
+      });
       setNewPin('');
       setNewPinConfirm('');
       setTimeout(() => {
         setShowPinRotate(false);
         setPinRotateStatus(null);
-      }, 1400);
+      }, 1600);
     } catch {
-      setPinRotateStatus(
-        lang === 'ar' ? 'تعذر تحديث الرقم السري' : 'PIN konnte nicht geändert werden'
-      );
+      setPinRotateStatus({
+        text:
+          lang === 'ar'
+            ? 'تعذر تحديث الرقم السري، تحقق من الاتصال بالإنترنت.'
+            : 'PIN konnte nicht geändert werden.',
+        isError: true,
+      });
+    } finally {
+      setIsRotatingPin(false);
     }
   };
 
@@ -412,11 +460,37 @@ export function AdminDashboard({
     seenOrderIdsRef.current.clear();
   };
 
-  const handleOrderStatusChange = async (orderId: string, nextStatus: OrderStatus) => {
+  const handleOrderStatusChange = async (order: OrderRecord, nextStatus: OrderStatus) => {
     if (!credentials) return;
-    setUpdatingOrderId(orderId);
+    setSyncError(null);
+    setActionNotice(null);
+    setConfirmDeleteOrderId(null);
+    setUpdatingOrderId(order.id);
     try {
-      await updateOrderStatus(orderId, nextStatus, credentials.adminWriteSecret);
+      await updateOrderStatus(order.id, nextStatus, credentials.adminWriteSecret);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'UPDATE_FAILED');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const handleDeleteOrderFromList = async (order: OrderRecord) => {
+    if (!credentials) return;
+    setSyncError(null);
+    setActionNotice(null);
+    setConfirmDeleteOrderId(null);
+    setUpdatingOrderId(order.id);
+    try {
+      await deleteOrderRecord(order, credentials.adminWriteSecret);
+      seenOrderIdsRef.current.delete(order.id);
+      setActionNotice(
+        lang === 'ar'
+          ? `تم حذف الطلب #${order.orderNumber} من قائمة الطلبات.`
+          : `Bestellung #${order.orderNumber} wurde aus der Liste gelöscht.`
+      );
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'DELETE_FAILED');
     } finally {
       setUpdatingOrderId(null);
     }
@@ -427,6 +501,7 @@ export function AdminDashboard({
     nextStatus: ComplaintStatus
   ) => {
     if (!credentials) return;
+    setSyncError(null);
     setUpdatingComplaintId(complaint.id);
     try {
       const note = noteDrafts[complaint.id] ?? complaint.adminNote ?? '';
@@ -436,6 +511,8 @@ export function AdminDashboard({
         note,
         credentials.adminWriteSecret
       );
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'UPDATE_FAILED');
     } finally {
       setUpdatingComplaintId(null);
     }
@@ -721,13 +798,18 @@ export function AdminDashboard({
 
             <button
               type="button"
-              onClick={() => setShowPinRotate((v) => !v)}
-              className="h-10 px-3 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] border border-[#EAE5DF] text-[12px] font-bold text-[#242E30] inline-flex items-center gap-1.5"
+              onClick={() => {
+                setShowPinRotate((v) => !v);
+                setPinRotateStatus(null);
+              }}
+              className={`h-10 px-3 rounded-[12px] border text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors ${
+                showPinRotate
+                  ? 'bg-[#FFF3E6] border-[#FF8000]/40 text-[#FF8000]'
+                  : 'bg-[#F8F5F2] hover:bg-[#EAE5DF] border-[#EAE5DF] text-[#242E30]'
+              }`}
             >
               <KeyRound className="w-3.5 h-3.5 text-[#FF8000]" />
-              <span className="hidden sm:inline">
-                {lang === 'ar' ? 'تغيير PIN' : 'PIN ändern'}
-              </span>
+              <span>{lang === 'ar' ? 'تغيير الرقم السري' : 'PIN ändern'}</span>
             </button>
 
             <button
@@ -795,16 +877,62 @@ export function AdminDashboard({
                 className="w-full h-10 px-3 rounded-[10px] bg-[#F8F5F2] border border-[#EAE5DF] text-[13px]"
               />
             </div>
-            <button
-              type="submit"
-              className="h-10 px-4 rounded-[10px] bg-[#FF8000] hover:bg-[#E67300] text-white text-[12px] font-bold"
-            >
-              {lang === 'ar' ? 'حفظ الرقم الجديد' : 'PIN speichern'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={isRotatingPin}
+                className="h-10 px-4 rounded-[10px] bg-[#FF8000] hover:bg-[#E67300] disabled:opacity-60 text-white text-[12px] font-bold"
+              >
+                {isRotatingPin
+                  ? lang === 'ar'
+                    ? 'جاري الحفظ...'
+                    : 'Speichern...'
+                  : lang === 'ar'
+                    ? 'حفظ الرقم الجديد'
+                    : 'PIN speichern'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPinRotate(false);
+                  setPinRotateStatus(null);
+                }}
+                className="h-10 px-3 rounded-[10px] bg-[#F8F5F2] hover:bg-[#EAE5DF] border border-[#EAE5DF] text-[#242E30] text-[12px] font-bold"
+              >
+                {lang === 'ar' ? 'إغلاق' : 'Schließen'}
+              </button>
+            </div>
             {pinRotateStatus && (
-              <p className="w-full text-[12px] font-bold text-[#16A34A]">{pinRotateStatus}</p>
+              <p
+                className={`w-full text-[12px] font-bold ${
+                  pinRotateStatus.isError ? 'text-red-600' : 'text-[#16A34A]'
+                }`}
+              >
+                {pinRotateStatus.text}
+              </p>
             )}
           </form>
+        )}
+
+        {syncError && (
+          <div className="p-4 rounded-[12px] bg-red-50 border border-red-200 text-red-800 text-[13px] font-semibold">
+            {lang === 'ar'
+              ? 'تعذر الاتصال بقائمة الطلبات حالياً. تحقق من الاتصال بالإنترنت وأعد تحميل الصفحة.'
+              : 'Verbindung zur Bestellliste fehlgeschlagen. Bitte Internetverbindung prüfen und neu laden.'}
+          </div>
+        )}
+
+        {actionNotice && (
+          <div className="p-3.5 rounded-[12px] bg-[#ECFDF3] border border-[#16A34A]/30 text-[#15803D] text-[13px] font-bold flex items-center justify-between gap-2">
+            <span>{actionNotice}</span>
+            <button
+              type="button"
+              onClick={() => setActionNotice(null)}
+              className="text-[12px] underline shrink-0"
+            >
+              {lang === 'ar' ? 'إغلاق' : 'Schließen'}
+            </button>
+          </div>
         )}
 
         {/* Primary Section Switcher: Orders vs Complaints */}
@@ -861,7 +989,8 @@ export function AdminDashboard({
                   { id: 'accepted', ar: 'تم الاستلام', de: 'Angenommen' },
                   { id: 'preparing', ar: 'جاري التحضير', de: 'In Zubereitung' },
                   { id: 'delivering', ar: 'في التوصيل', de: 'Unterwegs' },
-                  { id: 'completed', ar: 'مكتملة', de: 'Fertig' },
+                  { id: 'completed', ar: 'تم التسليم', de: 'Fertig' },
+                  { id: 'cancelled', ar: 'ملغاة', de: 'Storniert' },
                 ] as const
               ).map((tab) => (
                 <button
@@ -966,17 +1095,25 @@ export function AdminDashboard({
                               <MapPin className="w-4 h-4 text-[#FF8000] shrink-0 mt-0.5" />
                               <span>{order.address}</span>
                             </p>
-                            {order.gpsText && (
+                            {order.orderMode === 'delivery' && (order.gpsText || order.address) && (
                               <a
-                                href={`https://maps.google.com/?q=${order.gpsText}`}
+                                href={
+                                  order.gpsText
+                                    ? `https://maps.google.com/?q=${order.gpsText}`
+                                    : `https://maps.google.com/?q=${encodeURIComponent(`${order.address}, Rostock`)}`
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB] hover:underline"
                               >
                                 <span>
-                                  {lang === 'ar'
-                                    ? 'فتح الموقع على Google Maps'
-                                    : 'In Google Maps öffnen'}
+                                  {order.gpsText
+                                    ? lang === 'ar'
+                                      ? 'فتح الإحداثيات على Google Maps'
+                                      : 'GPS-Standort in Google Maps'
+                                    : lang === 'ar'
+                                      ? 'فتح العنوان على Google Maps'
+                                      : 'Adresse in Google Maps suchen'}
                                 </span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
@@ -1022,7 +1159,7 @@ export function AdminDashboard({
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => handleOrderStatusChange(order.id, 'accepted')}
+                            onClick={() => handleOrderStatusChange(order, 'accepted')}
                             className="flex-1 min-w-[160px] h-11 px-4 rounded-[12px] bg-[#16A34A] hover:bg-[#15803D] disabled:opacity-60 text-white font-display font-bold text-[13px] inline-flex items-center justify-center gap-2 transition-colors"
                           >
                             <Check className="w-4 h-4" />
@@ -1036,7 +1173,7 @@ export function AdminDashboard({
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => handleOrderStatusChange(order.id, 'preparing')}
+                            onClick={() => handleOrderStatusChange(order, 'preparing')}
                             className="h-11 px-4 rounded-[12px] bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-60 text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors"
                           >
                             <ChefHat className="w-4 h-4" />
@@ -1048,7 +1185,7 @@ export function AdminDashboard({
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => handleOrderStatusChange(order.id, 'delivering')}
+                            onClick={() => handleOrderStatusChange(order, 'delivering')}
                             className="h-11 px-4 rounded-[12px] bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-60 text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors"
                           >
                             <Truck className="w-4 h-4" />
@@ -1060,7 +1197,7 @@ export function AdminDashboard({
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => handleOrderStatusChange(order.id, 'completed')}
+                            onClick={() => handleOrderStatusChange(order, 'completed')}
                             className="h-11 px-4 rounded-[12px] bg-[#242E30] hover:bg-[#354245] disabled:opacity-60 text-white text-[12px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors"
                           >
                             <Check className="w-4 h-4" />
@@ -1072,11 +1209,53 @@ export function AdminDashboard({
                           <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => handleOrderStatusChange(order.id, 'cancelled')}
+                            onClick={() => handleOrderStatusChange(order, 'cancelled')}
                             className="h-11 px-3.5 rounded-[12px] bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
                           >
                             <XCircle className="w-4 h-4" />
                             <span>{lang === 'ar' ? 'إلغاء' : 'Stornieren'}</span>
+                          </button>
+                        )}
+
+                        {(order.status === 'completed' || order.status === 'cancelled') ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => handleDeleteOrderFromList(order)}
+                            className="h-11 px-3.5 rounded-[12px] bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-700 border border-red-200 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>{lang === 'ar' ? 'حذف من القائمة' : 'Aus Liste löschen'}</span>
+                          </button>
+                        ) : confirmDeleteOrderId === order.id ? (
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() => handleDeleteOrderFromList(order)}
+                              className="h-11 px-3.5 rounded-[12px] bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span>{lang === 'ar' ? 'تأكيد الحذف' : 'Löschen bestätigen'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() => setConfirmDeleteOrderId(null)}
+                              className="h-11 px-3 rounded-[12px] bg-[#F8F5F2] hover:bg-[#EAE5DF] text-[#242E30] border border-[#EAE5DF] text-[12px] font-bold transition-colors"
+                            >
+                              {lang === 'ar' ? 'تراجع' : 'Abbrechen'}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => setConfirmDeleteOrderId(order.id)}
+                            className="h-11 px-3.5 rounded-[12px] bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-700 border border-red-200 text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>{lang === 'ar' ? 'حذف من القائمة' : 'Aus Liste löschen'}</span>
                           </button>
                         )}
 

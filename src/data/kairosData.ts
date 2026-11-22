@@ -1938,7 +1938,9 @@ export function buildWhatsAppOrderText(payload: WhatsAppOrderPayload): string {
 
   const mapsLine = payload.gpsCoords
     ? `\n📍 رابط الموقع (Google Maps): https://maps.google.com/?q=${payload.gpsCoords.lat.toFixed(6)},${payload.gpsCoords.lng.toFixed(6)}`
-    : '';
+    : payload.orderMode === 'delivery' && payload.address.trim()
+      ? `\n📍 بحث العنوان (Google Maps): https://maps.google.com/?q=${encodeURIComponent(`${payload.address.trim()}, Rostock`)}`
+      : '';
 
   const paymentMethodLabel =
     payload.paymentMethod === 'payment_link'

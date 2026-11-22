@@ -44,7 +44,7 @@ function randomHex(byteCount: number): string {
 export async function sha256Base64(input: string): Promise<string> {
   const encoded = new TextEncoder().encode(input);
   const digest = await crypto.subtle.digest('SHA-256', toArrayBuffer(encoded));
-  return bytesToBase64(new Uint8Array(digest));
+  return bytesToBase64(new Uint8Array(digest)).replace(/\+/g, '-').replace(/\//g, '_');
 }
 
 async function derivePinAesKey(pin: string, saltBytes: Uint8Array): Promise<CryptoKey> {

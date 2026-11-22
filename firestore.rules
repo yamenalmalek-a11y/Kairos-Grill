@@ -297,6 +297,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function matchesAdminSecret(secret) {
+      let computed = hashing.sha256(secret).toBase64();
+      let stored = get(/databases/$(database)/documents/kitchenVault/rostock).data.adminSecretHash;
+      return computed == stored ||
+        computed.replace('-', '+').replace('_', '/') == stored;
+    }
+
     match /adminProofs/{proofId} {
       allow get, list: if false;
       allow create: if isValidId(proofId) &&
@@ -304,8 +311,7 @@ service cloud.firestore {
         isValidAdminProof(incoming()) &&
         incoming().createdAt == request.time &&
         exists(/databases/$(database)/documents/kitchenVault/rostock) &&
-        hashing.sha256(incoming().adminSecret).toBase64() ==
-          get(/databases/$(database)/documents/kitchenVault/rostock).data.adminSecretHash;
+        matchesAdminSecret(incoming().adminSecret);
       allow update, delete: if false;
     }
 
@@ -313,8 +319,7 @@ service cloud.firestore {
       allow get: if isValidId(orderId) &&
         orderId.size() >= 20 &&
         existing().shopId == 'kairos_rostock';
-      allow list: if resource.data.shopId == 'kairos_rostock' &&
-        isValidOrderStatus(resource.data.status);
+      allow list: if resource.data.shopId == 'kairos_rostock';
       allow create: if isValidId(orderId) &&
         orderId.size() >= 20 &&
         isValidOrder(incoming()) &&
@@ -331,7 +336,16 @@ service cloud.firestore {
         incoming().updatedAt == request.time &&
         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastActionId', 'updatedAt']) &&
         hasValidAdminProof(incoming().lastActionId, 'order', orderId, incoming().status);
-      allow delete: if false;
+      allow delete: if isValidId(orderId) &&
+        orderId.size() >= 20 &&
+        existing().shopId == 'kairos_rostock' &&
+        existing().status in ['completed', 'cancelled'] &&
+        isValidId(existing().lastActionId) &&
+        existing().lastActionId.size() >= 20 &&
+        exists(/databases/$(database)/documents/adminProofs/$(existing().lastActionId)) &&
+        get(/databases/$(database)/documents/adminProofs/$(existing().lastActionId)).data.targetType == 'order' &&
+        get(/databases/$(database)/documents/adminProofs/$(existing().lastActionId)).data.targetId == orderId &&
+        get(/databases/$(database)/documents/adminProofs/$(existing().lastActionId)).data.targetStatus == existing().status;
     }
 
     match /orderTracking/{orderId} {
@@ -363,8 +377,7 @@ service cloud.firestore {
       allow get: if isValidId(complaintId) &&
         complaintId.size() >= 20 &&
         existing().shopId == 'kairos_rostock';
-      allow list: if resource.data.shopId == 'kairos_rostock' &&
-        resource.data.status in ['new', 'reviewed', 'resolved'];
+      allow list: if resource.data.shopId == 'kairos_rostock';
       allow create: if isValidId(complaintId) &&
         complaintId.size() >= 20 &&
         isValidComplaint(incoming()) &&
